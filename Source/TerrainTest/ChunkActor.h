@@ -32,7 +32,7 @@ public:
 
 	TArray<FVector> getVertices(int chunkSize, double(*heightMap)[64]); // build our vertices for chunk at position with dimension 
 	TArray<int> getTriangles(int chunkSize);
-	TArray<FVector> getNormals(TArray<int32>);
+	TArray<FVector> getNormals(TArray<FVector> vertices,  TArray<int32> triangles);
 
 	//Debug Logging
 	void LogVertices(TArray<FVector> myArray);

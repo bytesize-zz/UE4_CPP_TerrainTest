@@ -4,6 +4,10 @@
 #include "PerlinNoise.h"
 #include "KismetProceduralMeshLibrary.h"
 
+#include <iostream>     // std::cout
+#include <algorithm>    // std::for_each
+#include <vector>       // std::vector
+
 // Sets default values
 AChunkActor::AChunkActor()
 {
@@ -48,9 +52,7 @@ void AChunkActor::BuildChunk(double(*heightMap)[64])
 	triangles = getTriangles(chunkSize);
 
 	TArray<FVector> normals;
-	normals.Add(FVector(1, 0, 0));
-	normals.Add(FVector(1, 0, 0));
-	normals.Add(FVector(1, 0, 0));
+	normals = getNormals(vertices, triangles);
 
 	TArray<FVector2D> UV0;
 	UV0.Add(FVector2D(0, 0));
@@ -111,7 +113,7 @@ TArray<FVector> AChunkActor::getVertices(int chunkSize, double(*heightMap)[64])
 			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), heightMap[x][y]);
 			vertices.Add(FVector(x*cm, y*cm, z * cm));
 		}
-	}	LogVertices(vertices);
+	}	//LogVertices(vertices);
 	return vertices;
 }
 
@@ -139,13 +141,35 @@ TArray<int> AChunkActor::getTriangles(int chunkSize)
 	return triangles;
 }
 
-TArray<FVector> AChunkActor::getNormals(TArray<int32>)
+TArray<FVector> AChunkActor::getNormals(TArray<FVector> vertices, TArray<int32> triangles)
 {
 	TArray<FVector> normals;
+	FVector ba, ca;
+	FVector newNormal;
 
+	FVector a, b, c;
 
-	return TArray<FVector>();
+	for (int i = 0; i < triangles.Num(); i+=3) {
+		a = vertices[triangles[i]];
+		b = vertices[triangles[i+1]];
+		c = vertices[triangles[i+2]];
+
+		ba = a - b;
+		ca = a - c;
+
+		newNormal = newNormal.CrossProduct(ba, ca);
+		newNormal.Normalize(1);
+
+		//UE_LOG(LogTemp, Warning, TEXT("New Normal is: %s"), *newNormal.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("new normal is: %s"),  *newNormal.ToString());
+		normals.Add(newNormal);
+	}
+	/*std::for_each(int32, triangles) {	}*/
+
+	return normals;
 }
+
+
 
 void AChunkActor::LogVertices(TArray<FVector> myVertices)
 {
@@ -157,7 +181,6 @@ void AChunkActor::LogVertices(TArray<FVector> myVertices)
 void AChunkActor::LogTriangles(TArray<int> myTriangles)
 {
 	int i = 0;
-
 	while (i < myTriangles.Num())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Triangle between: %i, %i, %i"), myTriangles[i], myTriangles[i + 1], myTriangles[i + 2]);
