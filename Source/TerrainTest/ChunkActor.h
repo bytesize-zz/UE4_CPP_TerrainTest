@@ -24,19 +24,29 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void BuildChunk(); // chunk doesn't exist so build it from scratch
-	void LoadChunk(); // chunk was already created, load it from the disk
+	void BuildChunk(double(*heightMap)[64]); // chunk doesn't exist so build it from scratch
+	void LoadChunk(); // ToDo
+	void SaveChunk(); // ToDo
 
-	TArray<FVector> BuildVertices(int chunkSize); // build our vertices for chunk at position with dimension 
-	TArray<int> BuildTriangles(TArray<FVector> vertices, int chunkSize);
+	void BuildHeightMap(double(*heightMap)[64]);
+
+	TArray<FVector> getVertices(int chunkSize, double(*heightMap)[64]); // build our vertices for chunk at position with dimension 
+	TArray<int> getTriangles(int chunkSize);
+	TArray<FVector> getNormals(TArray<int32>);
 
 	//Debug Logging
 	void LogVertices(TArray<FVector> myArray);
 	void LogTriangles(TArray<int> myTriangles);
 
+	void LogTriVertices(TArray<int> myTriangles, TArray<FVector> myVertices);
+
 private:
 	UPROPERTY(VisibleAnywhere)
 		UProceduralMeshComponent * mesh;
+		float multiplier;
+
+ //either we set heightmap as public variable, or we need a function to get the height endpoints at each side, to pass to surrounding chunks
+
 };
 
 

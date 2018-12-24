@@ -7,12 +7,7 @@
 AMapActor::AMapActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("GeneratedMesh"));
-	RootComponent = mesh;
-	// New in UE 4.17, multi-threaded PhysX cooking.
-	mesh->bUseAsyncCooking = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	FVector chunkSize = FVector(64, 64, 64);
 	TArray<TArray<int>> chunkList;

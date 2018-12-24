@@ -28,7 +28,6 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere)
-		UProceduralMeshComponent * mesh;
 		FVector chunkSize;
 		TArray<TArray<int>> chunkList;
 		int multiplier; // size of one "Block", distance between vertices 
