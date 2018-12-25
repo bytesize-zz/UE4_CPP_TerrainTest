@@ -8,6 +8,8 @@
 #include <algorithm>    // std::for_each
 #include <vector>       // std::vector
 
+#include "ConstructorHelpers.h" // Needed for Material import
+
 // Sets default values
 AChunkActor::AChunkActor()
 {
@@ -19,8 +21,6 @@ AChunkActor::AChunkActor()
 	RootComponent = mesh;
 	// New in UE 4.17, multi-threaded PhysX cooking.
 	mesh->bUseAsyncCooking = true;
-
-	
 	
 }
 
@@ -66,16 +66,14 @@ void AChunkActor::BuildChunk(double(*heightMap)[64])
 	tangents.Add(FProcMeshTangent(0, 1, 0));
 
 
-	TArray<FLinearColor> vertexColors;
-	vertexColors.Add(FLinearColor(0.75, 0.75, 0.75, 1.0));
-	vertexColors.Add(FLinearColor(0.75, 0.75, 0.75, 1.0));
-	vertexColors.Add(FLinearColor(0.75, 0.75, 0.75, 1.0));
+	TArray<FLinearColor> vertexColors; // ToDo: find out, why this is nessecary
 
 
 	//LogTriVertices(triangles, vertices);
 
 	mesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
 	
+	mesh->SetMaterial(0, TheMaterial);
 
 	// Enable collision data
 	mesh->ContainsPhysicsTriMeshData(true);
