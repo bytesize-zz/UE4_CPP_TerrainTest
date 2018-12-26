@@ -54,13 +54,6 @@
 	 return (res + 1.0) / 2.0;
  }
 
- std::vector<int> PerlinNoise::getVector()
- {
-	 std::vector<int> q(p.begin(), p.begin() + 256);
-	 UE_LOG(LogTemp, Warning, TEXT("q Length is: %i"), q.size());
-	 return q;
- }
-
  double PerlinNoise::fade(double t) {
 	 return t * t * t * (t * (t * 6 - 15) + 10);
  }
