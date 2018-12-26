@@ -28,11 +28,13 @@ public:
 	void LoadChunk(); // ToDo
 	void SaveChunk(); // ToDo
 
-	void BuildHeightMap(double(*heightMap)[64]);
+	void BuildHeightMap(double(*heightMap)[64], FVector position);
 
 	TArray<FVector> getVertices(int chunkSize, double(*heightMap)[64]); // build our vertices for chunk at position with dimension 
 	TArray<int> getTriangles(int chunkSize);
 	TArray<FVector> getNormals(TArray<FVector> vertices,  TArray<int32> triangles);
+	TArray<FVector2D> getUVs(TArray<FVector> vertices, int chunkSize);
+
 
 	//Debug Logging
 	void LogVertices(TArray<FVector> myArray);

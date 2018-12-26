@@ -12,7 +12,8 @@
 	
 		 	// Fill p with values from 0 to 255
 		 	std::iota(p.begin(), p.end(), 0);
-	
+
+
 		 	// Initialize a random engine with seed
 		 	std::default_random_engine engine(seed);
 	
@@ -23,6 +24,7 @@
 		 	p.insert(p.end(), p.begin(), p.end());
 	
 }
+
  double PerlinNoise::noise(double x, double y, double z) {
 	 // Find the unit cube that contains the point
 	 int X = (int)floor(x) & 255;
@@ -50,6 +52,13 @@
 	 // Add blended results from 8 corners of cube
 	 double res = lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)), lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))), lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)), lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))));
 	 return (res + 1.0) / 2.0;
+ }
+
+ std::vector<int> PerlinNoise::getVector()
+ {
+	 std::vector<int> q(p.begin(), p.begin() + 256);
+	 UE_LOG(LogTemp, Warning, TEXT("q Length is: %i"), q.size());
+	 return q;
  }
 
  double PerlinNoise::fade(double t) {

@@ -23,6 +23,7 @@ public:
 	PerlinNoise(unsigned int seed);
 	// Get a noise value, for 2D images z can have any value
 	double noise(double x, double y, double z);
+	std::vector<int> getVector();
 private:
 	double fade(double t);
 	double lerp(double t, double a, double b);

@@ -8,6 +8,11 @@
 #include <algorithm>    // std::for_each
 #include <vector>       // std::vector
 
+#include <cmath>
+#include <random>
+#include <algorithm>
+#include <numeric>
+
 #include "ConstructorHelpers.h" // Needed for Material import
 
 // Sets default values
@@ -22,6 +27,15 @@ AChunkActor::AChunkActor()
 	// New in UE 4.17, multi-threaded PhysX cooking.
 	mesh->bUseAsyncCooking = true;
 	
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Material(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
+
+	if (Material.Succeeded())
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Found Material."));
+		TheMaterial = (UMaterialInterface*)Material.Object;
+		mesh->SetMaterial(0, TheMaterial);
+	}
+
 }
 
 // Called when the game starts or when spawned
@@ -30,8 +44,12 @@ void AChunkActor::BeginPlay()
 	Super::BeginPlay();
 
 	double(*heightMap)[64] = new double[64][64];
-	BuildHeightMap(heightMap);
+	FVector position = GetActorLocation();
+
+	BuildHeightMap(heightMap, position);
 	BuildChunk(heightMap);
+
+	
 
 }
 
@@ -55,9 +73,7 @@ void AChunkActor::BuildChunk(double(*heightMap)[64])
 	normals = getNormals(vertices, triangles);
 
 	TArray<FVector2D> UV0;
-	UV0.Add(FVector2D(0, 0));
-	UV0.Add(FVector2D(10, 0));
-	UV0.Add(FVector2D(0, 10));
+	UV0 = getUVs(vertices, chunkSize);
 
 
 	TArray<FProcMeshTangent> tangents;
@@ -67,29 +83,32 @@ void AChunkActor::BuildChunk(double(*heightMap)[64])
 
 
 	TArray<FLinearColor> vertexColors; // ToDo: find out, why this is nessecary
-
-
-	//LogTriVertices(triangles, vertices);
-
 	mesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
-	
-	mesh->SetMaterial(0, TheMaterial);
-
 	// Enable collision data
 	mesh->ContainsPhysicsTriMeshData(true);
-
+	
 }
 
-void AChunkActor::BuildHeightMap(double(*heightMap)[64])
+
+
+
+void AChunkActor::BuildHeightMap(double(*heightMap)[64], FVector position)
 {
 	unsigned int seed = 123;
-	PerlinNoise pn(seed);	
-	double yOff = 0;	
+	PerlinNoise pn(seed);
+	   
+	//UE_LOG(LogTemp, Warning, TEXT("Chunk Location is %s"), *position.ToString());
+
+	double yOff = position[1] / 1000; //ToDo this /1000 needs to be connected to the +=0.1
+	UE_LOG(LogTemp, Warning, TEXT("yOff: %f"), yOff);
 	for (int y = 0; y < 64; y++) {
-		double xOff = 0;
+		double xOff = position[0] / 1000;
+		UE_LOG(LogTemp, Warning, TEXT("xOff: %f"), xOff);
 		for (int x = 0; x < 64; x++) {
 			double m = pn.noise(xOff, yOff, 0.1);
 			m = m * 10;
+
+			//UE_LOG(LogTemp, Warning, TEXT("Position i is %f, %f "), position[0] / 100, position[1] / 100);
 
 			heightMap[x][y] = m;
 			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), m);
@@ -166,6 +185,22 @@ TArray<FVector> AChunkActor::getNormals(TArray<FVector> vertices, TArray<int32> 
 
 	return normals;
 }
+
+TArray<FVector2D> AChunkActor::getUVs(TArray<FVector> vertices, int chunkSize)
+{
+	TArray<FVector2D> uv;
+	int maximum = (chunkSize - 1) * 100;
+
+	for(int i = 0; i < vertices.Num(); i++) {
+		double u = (vertices[i][0] /maximum ) * 10;
+		double v = (vertices[i][1] /maximum ) * 10;
+		uv.Add(FVector2D(u, v));
+		//UE_LOG(LogTemp, Warning, TEXT("New UV is %f, %f"), u,v);
+	}
+
+	return uv;
+}
+
 
 
 
