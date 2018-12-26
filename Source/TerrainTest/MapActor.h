@@ -25,11 +25,15 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void SpawnChunk(TArray<int> chunk);
 
+	void SpawnMap(int radius);
+
+	void SpawnChunk(FVector chunk);
+
 
 private:
 	UPROPERTY(VisibleAnywhere)
-		FVector chunkSize;
+		int chunkSize = 64;
 		TArray<TArray<int>> chunkList;
 		int multiplier; // size of one "Block", distance between vertices 
-
+		int radius = 0;
 };

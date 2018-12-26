@@ -94,26 +94,29 @@ void AChunkActor::BuildChunk(double(*heightMap)[64])
 
 void AChunkActor::BuildHeightMap(double(*heightMap)[64], FVector position)
 {
-	unsigned int seed = 123;
+	unsigned int seed = 898;
 	PerlinNoise pn(seed);
+
+	double offsetMultiplier = 0.02; //ToDo: find out why the UProperty isn't working
+	int extremaMultiplier = 30;
 	   
 	//UE_LOG(LogTemp, Warning, TEXT("Chunk Location is %s"), *position.ToString());
 
-	double yOff = position[1] / 1000; //ToDo this /1000 needs to be connected to the +=0.1
-	UE_LOG(LogTemp, Warning, TEXT("yOff: %f"), yOff);
+	double yOff = position[1] / cmToMeter * offsetMultiplier; //ToDo: this /1000 needs to be connected to the +=0.1
+	//UE_LOG(LogTemp, Warning, TEXT("yOff: %f"), yOff);
 	for (int y = 0; y < 64; y++) {
-		double xOff = position[0] / 1000;
-		UE_LOG(LogTemp, Warning, TEXT("xOff: %f"), xOff);
+		double xOff = position[0] / cmToMeter * offsetMultiplier;
+		//UE_LOG(LogTemp, Warning, TEXT("xOff: %f"), xOff);
 		for (int x = 0; x < 64; x++) {
-			double m = pn.noise(xOff, yOff, 0.1);
-			m = m * 10;
+			double m = pn.noise(xOff, yOff, 0.8);
+			m = m * extremaMultiplier;
 
 			//UE_LOG(LogTemp, Warning, TEXT("Position i is %f, %f "), position[0] / 100, position[1] / 100);
 
 			heightMap[x][y] = m;
 			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), m);
-			xOff += 0.1;		}
-		yOff += 0.1;
+			xOff += offsetMultiplier;		}
+		yOff += offsetMultiplier;
 	}
 }
 
@@ -128,7 +131,7 @@ TArray<FVector> AChunkActor::getVertices(int chunkSize, double(*heightMap)[64])
 		{	
 			double z = heightMap[x][y];
 			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), heightMap[x][y]);
-			vertices.Add(FVector(x*cm, y*cm, z * cm));
+			vertices.Add(FVector(x*cmToMeter, y*cmToMeter, z * cmToMeter));
 		}
 	}	//LogVertices(vertices);
 	return vertices;

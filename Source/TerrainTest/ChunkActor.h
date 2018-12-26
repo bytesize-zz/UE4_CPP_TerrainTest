@@ -45,10 +45,20 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere)
 		UProceduralMeshComponent * mesh;
-		float multiplier;
+		
+
+
 public:		
+	UPROPERTY(VisibleAnywhere)
+		int extremaMultiplier = 30;
+	UPROPERTY(VisibleAnywhere)
+		int cmToMeter = 100;
+	UPROPERTY(VisibleAnywhere)
+		double offsetMultiplier = 0.2;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Default)
 		UMaterialInterface* TheMaterial;
+
 
  //either we set heightmap as public variable, or we need a function to get the height endpoints at each side, to pass to surrounding chunks
 
