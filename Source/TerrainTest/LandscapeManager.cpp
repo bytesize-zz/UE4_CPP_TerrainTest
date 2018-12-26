@@ -9,10 +9,13 @@
 // Sets default values
 ALandscapeManager::ALandscapeManager()
 {
+	PrimaryActorTick.bCanEverTick = false;
 	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("GeneratedMesh"));
 	RootComponent = mesh;
 	// New in UE 4.17, multi-threaded PhysX cooking.
 	mesh->bUseAsyncCooking = true;	
+
+	
 }
 
 // Called when the game starts or when spawned
