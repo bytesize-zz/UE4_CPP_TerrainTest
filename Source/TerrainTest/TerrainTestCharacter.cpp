@@ -45,6 +45,8 @@ ATerrainTestCharacter::ATerrainTestCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+
+	SprintSpeedMultiplier = 5.0f;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -74,6 +76,9 @@ void ATerrainTestCharacter::SetupPlayerInputComponent(class UInputComponent* Pla
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ATerrainTestCharacter::OnResetVR);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed,this , &ATerrainTestCharacter::Sprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATerrainTestCharacter::StopSprinting);
 }
 
 
@@ -90,6 +95,17 @@ void ATerrainTestCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector 
 void ATerrainTestCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 		StopJumping();
+}
+
+void ATerrainTestCharacter::Sprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed *= SprintSpeedMultiplier;
+
+}
+
+void ATerrainTestCharacter::StopSprinting()
+{
+	GetCharacterMovement()->MaxWalkSpeed /= SprintSpeedMultiplier;
 }
 
 void ATerrainTestCharacter::TurnAtRate(float Rate)
