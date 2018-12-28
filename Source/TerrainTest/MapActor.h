@@ -33,11 +33,8 @@ public:
 
 	FVector getPlayerPositions();
 
-	void unloadChunks(); // delete one or all chunkActor beyond the load radius
-
 	FVector getActiveChunk(FVector playerPosition); // calculates the chunk the player is within, from the given playerLocation
-	TArray<FVector> getChunksToLoad(FVector activeChunk); // get a list of all chunks to load within the radius of one active player
-	TArray<FVector> getChunksToUnload(FVector activeChunk); // get a list of all chunks, that are loaded but not within radius of one active player
+	void getChunksToUnload(); // get a list of all chunks, that are loaded but not within radius of one active player
 
 	void logVectorArray(TArray<FVector> myArray);
 

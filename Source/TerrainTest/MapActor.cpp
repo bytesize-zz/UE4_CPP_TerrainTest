@@ -34,9 +34,7 @@ void AMapActor::Tick(float DeltaTime)
 	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 	
 	SpawnMap(5);
-	//getChunksToLoad(myActiveChunk);
-	getChunksToUnload(myActiveChunk);
-
+	getChunksToUnload();
 }
 
 void AMapActor::SpawnMap(int radius) {
@@ -77,8 +75,7 @@ void AMapActor::SpawnChunk(FVector chunk)
 void AMapActor::DeleteChunk(AActor* chunk) {
 	 
 	if (chunk) {
-		chunk->Destroy();
-		
+		chunk->Destroy();		
 	}
 }
 
@@ -112,30 +109,6 @@ FVector AMapActor::getActiveChunk(FVector playerPosition)
 	return activeChunk;
 }
 
-TArray<FVector> AMapActor::getChunksToLoad(FVector activeChunk)
-{
-	TArray<FVector> chunksToLoad;
-
-	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
-	int x = myActiveChunk[0];
-	int y = myActiveChunk[1];
-
-	for (int x = 0; x < radius; x++) {
-		for (int y = 0; y < radius; y++) {
-			FVector newVector = FVector(activeChunk[0]+x, activeChunk[1]+y, 0);
-			//loadedChunks.FindByKey(newVector);
-			//check if the computed chunk is already loaded, if not add it chunksToLoad
-			if (!isLoaded(newVector)) {
-				SpawnChunk(newVector);
-				//UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
-			}			
-		}
-	}
-
-	//logVectorArray(chunksToLoad);
-	return chunksToLoad; 
-}
-
 //checks if we already have an Actor at a specific position
 bool AMapActor::isLoaded(FVector chunk) {
 
@@ -160,9 +133,8 @@ bool AMapActor::isInRadius(FVector chunk)
 
 
 
-TArray<FVector> AMapActor::getChunksToUnload(FVector activeChunk)
+void AMapActor::getChunksToUnload()
 {
-	TArray<FVector> chunksToUnload;
 
 	for (int i = 0; i < loadedChunks.Num(); i++) {
 		FVector chunkPosition = loadedChunks[i]->chunkPosition;
