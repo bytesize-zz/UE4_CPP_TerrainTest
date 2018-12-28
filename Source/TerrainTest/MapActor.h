@@ -27,6 +27,7 @@ public:
 	void SpawnMap(int radius);
 	void SpawnChunk(FVector chunk);
 	bool isLoaded(FVector chunk);
+	bool isInRadius(FVector chunk); //checks if the given vector is within the loading radius
 
 	void DeleteChunk(AActor* chunk);
 

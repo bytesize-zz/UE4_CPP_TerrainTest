@@ -51,7 +51,7 @@ void AMapActor::SpawnMap(int radius) {
 			//check if the computed chunk is already loaded, if not add it chunksToLoad
 			if (!isLoaded(newVector)) {
 				SpawnChunk(newVector);
-				UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
+				//UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
 			}
 		}
 	}
@@ -78,6 +78,7 @@ void AMapActor::DeleteChunk(AActor* chunk) {
 	 
 	if (chunk) {
 		chunk->Destroy();
+		
 	}
 }
 
@@ -126,7 +127,7 @@ TArray<FVector> AMapActor::getChunksToLoad(FVector activeChunk)
 			//check if the computed chunk is already loaded, if not add it chunksToLoad
 			if (!isLoaded(newVector)) {
 				SpawnChunk(newVector);
-				UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
+				//UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
 			}			
 		}
 	}
@@ -143,21 +144,35 @@ bool AMapActor::isLoaded(FVector chunk) {
 			return true;
 		}
 	}
-
 	return false;
 }
+
+bool AMapActor::isInRadius(FVector chunk)
+{
+	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
+
+	// use abs() to compare chunk radius, without getting mixed up with negatives
+	if ((abs(chunk[0] - myActiveChunk[0]) > radius) || (abs(chunk[1] - myActiveChunk[1]) > radius))
+		return false;
+	else
+		return true;
+}
+
+
 
 TArray<FVector> AMapActor::getChunksToUnload(FVector activeChunk)
 {
 	TArray<FVector> chunksToUnload;
 
 	for (int i = 0; i < loadedChunks.Num(); i++) {
-		// use abs() to compare chunk radius, without getting mixed up with negatives
-		//if ((abs(loadedChunks[i][0]) > abs(activeChunk[0]) + radius) || (abs(loadedChunks[i][1]) > abs(activeChunk[1]) + radius)) 
-			//chunksToUnload.Add(loadedChunks[i]);
-	}
+		FVector chunkPosition = loadedChunks[i]->chunkPosition;
 
-	return chunksToUnload;
+		if (!isInRadius(chunkPosition)) {
+			//UE_LOG(LogTemp, Warning, TEXT("Chunk to delete: %s"), chunkPosition.ToString());
+			DeleteChunk(loadedChunks[i]);
+			loadedChunks.RemoveAt(i);
+		}			
+	}
 }
 
 
