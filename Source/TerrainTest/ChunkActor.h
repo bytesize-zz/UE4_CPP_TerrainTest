@@ -25,6 +25,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void BuildChunk(double(*heightMap)[64]); // chunk doesn't exist so build it from scratch
+	void generateWaterMesh();
 	void LoadChunk(); // ToDo
 	void SaveChunk(); // ToDo
 
@@ -44,7 +45,9 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere)
+		USceneComponent * Root;
 		UProceduralMeshComponent * mesh;
+		UProceduralMeshComponent * waterMesh;
 		
 
 
@@ -59,7 +62,9 @@ public:
 		FVector chunkPosition;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Default)
-		UMaterialInterface* TheMaterial;
+		UMaterialInterface* m_Ground;
+		UMaterialInterface* m_Water;
+
 
 
  //either we set heightmap as public variable, or we need a function to get the height endpoints at each side, to pass to surrounding chunks

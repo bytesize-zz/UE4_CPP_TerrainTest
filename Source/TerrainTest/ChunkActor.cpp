@@ -22,19 +22,36 @@ AChunkActor::AChunkActor()
 	PrimaryActorTick.bCanEverTick = false;
 	SetActorTickInterval(10);
 
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+
 	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("GeneratedMesh"));
-	RootComponent = mesh;
+	waterMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("GeneratedWaterMesh"));
+
+	mesh->AttachTo(Root);
+	waterMesh->AttachTo(Root);
+
 	// New in UE 4.17, multi-threaded PhysX cooking.
 	mesh->bUseAsyncCooking = true;
+	waterMesh->bUseAsyncCooking = true;
 	
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Material(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Water_Ocean'"));
 
-	if (Material.Succeeded())
+	if (groundMaterial.Succeeded())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Found Material."));
-		TheMaterial = (UMaterialInterface*)Material.Object;
-		mesh->SetMaterial(0, TheMaterial);
+		//UE_LOG(LogTemp, Warning, TEXT("Found groundMaterial."));
+		m_Ground = (UMaterialInterface*)groundMaterial.Object;
+		mesh->SetMaterial(0, m_Ground);
 	}
+
+	if (waterMaterial.Succeeded())
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Found waterMaterial."));
+		m_Water = (UMaterialInterface*)waterMaterial.Object;
+		waterMesh->SetMaterial(0, m_Water);
+	}
+
 
 }
 
@@ -48,8 +65,7 @@ void AChunkActor::BeginPlay()
 
 	BuildHeightMap(heightMap, position);
 	BuildChunk(heightMap);
-
-	
+	generateWaterMesh();
 
 }
 
@@ -89,7 +105,35 @@ void AChunkActor::BuildChunk(double(*heightMap)[64])
 	
 }
 
+void AChunkActor::generateWaterMesh() {
 
+	int chunkSize = 64;
+
+	TArray<FVector> vertices;
+	vertices = getVertices(chunkSize, NULL);
+
+	TArray<int32> triangles;
+	triangles = getTriangles(chunkSize);
+
+	TArray<FVector> normals;
+	normals = getNormals(vertices, triangles);
+
+	TArray<FVector2D> UV0;
+	UV0 = getUVs(vertices, chunkSize);
+
+
+	TArray<FProcMeshTangent> tangents;
+	tangents.Add(FProcMeshTangent(0, 1, 0));
+	tangents.Add(FProcMeshTangent(0, 1, 0));
+	tangents.Add(FProcMeshTangent(0, 1, 0));
+
+
+	TArray<FLinearColor> vertexColors; // ToDo: find out, why this is nessecary
+
+	waterMesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+	// Enable collision data
+	//waterMesh->ContainsPhysicsTriMeshData(true);
+}
 
 
 void AChunkActor::BuildHeightMap(double(*heightMap)[64], FVector position)
@@ -121,7 +165,7 @@ void AChunkActor::BuildHeightMap(double(*heightMap)[64], FVector position)
 }
 
 
-TArray<FVector> AChunkActor::getVertices(int chunkSize, double(*heightMap)[64])
+TArray<FVector> AChunkActor::getVertices(int chunkSize, double(*heightMap)[64] = NULL)
 {
 	int cm = 100; //should be Global Variable with Worldsettings.WorldToMeter
 	TArray<FVector> vertices;
@@ -129,7 +173,11 @@ TArray<FVector> AChunkActor::getVertices(int chunkSize, double(*heightMap)[64])
 	for (int y = 0; y < chunkSize; y++) {
 		for (int x = 0; x < chunkSize; x++)
 		{	
-			double z = heightMap[x][y];
+			double z;
+
+			if(heightMap == NULL) z = 18;  
+			else z = heightMap[x][y];
+
 			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), heightMap[x][y]);
 			vertices.Add(FVector(x*cmToMeter, y*cmToMeter, z * cmToMeter));
 		}

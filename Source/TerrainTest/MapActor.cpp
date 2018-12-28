@@ -23,7 +23,7 @@ void AMapActor::BeginPlay()
 	PrimaryActorTick.bCanEverTick = true;
 	SetActorTickInterval(1);
 
-	SpawnMap(5);
+	radius = 5;
 }
 
 // Called every frame
@@ -33,7 +33,7 @@ void AMapActor::Tick(float DeltaTime)
 
 	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 	
-	SpawnMap(5);
+	SpawnMap(radius);
 	getChunksToUnload();
 }
 
