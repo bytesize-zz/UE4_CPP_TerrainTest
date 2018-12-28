@@ -33,8 +33,10 @@ void AMapActor::Tick(float DeltaTime)
 
 	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 	
-	getChunksToLoad(myActiveChunk);
+	SpawnMap(5);
+	//getChunksToLoad(myActiveChunk);
 	getChunksToUnload(myActiveChunk);
+
 }
 
 void AMapActor::SpawnMap(int radius) {
@@ -45,7 +47,12 @@ void AMapActor::SpawnMap(int radius) {
 
 	for (int i = -radius; i <=radius; i++) {
 		for (int j = -radius; j <=radius; j++) {
-			SpawnChunk(FVector(x+i, x+j, 0));
+			FVector newVector = FVector(x + i, y + j, 0);
+			//check if the computed chunk is already loaded, if not add it chunksToLoad
+			if (!isLoaded(newVector)) {
+				SpawnChunk(newVector);
+				UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
+			}
 		}
 	}
 	//UE_LOG(LogTemp, Warning, TEXT("LoadedChunks2 Length: %s"), loadedChunks2.Num());
@@ -69,6 +76,9 @@ void AMapActor::SpawnChunk(FVector chunk)
 
 void AMapActor::DeleteChunk(AActor* chunk) {
 	 
+	if (chunk) {
+		chunk->Destroy();
+	}
 }
 
 
@@ -105,20 +115,36 @@ TArray<FVector> AMapActor::getChunksToLoad(FVector activeChunk)
 {
 	TArray<FVector> chunksToLoad;
 
+	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
+	int x = myActiveChunk[0];
+	int y = myActiveChunk[1];
+
 	for (int x = 0; x < radius; x++) {
 		for (int y = 0; y < radius; y++) {
 			FVector newVector = FVector(activeChunk[0]+x, activeChunk[1]+y, 0);
-
+			//loadedChunks.FindByKey(newVector);
 			//check if the computed chunk is already loaded, if not add it chunksToLoad
-			//if (!loadedChunks.Find(newVector)) {
-				//chunksToLoad.Add(newVector);
+			if (!isLoaded(newVector)) {
+				SpawnChunk(newVector);
 				UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
-			//}			
+			}			
 		}
 	}
 
 	//logVectorArray(chunksToLoad);
 	return chunksToLoad; 
+}
+
+//checks if we already have an Actor at a specific position
+bool AMapActor::isLoaded(FVector chunk) {
+
+	for (int i = 0; i < loadedChunks.Num(); i++) {
+		if (loadedChunks[i]->chunkPosition == chunk) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 TArray<FVector> AMapActor::getChunksToUnload(FVector activeChunk)

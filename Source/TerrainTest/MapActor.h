@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
+#include "ChunkActor.h"
 #include "MapActor.generated.h"
 
 UCLASS()
@@ -25,6 +26,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void SpawnMap(int radius);
 	void SpawnChunk(FVector chunk);
+	bool isLoaded(FVector chunk);
 
 	void DeleteChunk(AActor* chunk);
 
@@ -44,7 +46,7 @@ private:
 		int chunkSize = 64;
 
 	UPROPERTY(VisibleAnywhere)
-		TArray<AActor*> loadedChunks; // list of Pointers to all loaded chunks
+		TArray<AChunkActor*> loadedChunks; // list of Pointers to all loaded chunks
 		TArray<FVector> playerPositions;
 
 	UPROPERTY(VisibleAnywhere)
