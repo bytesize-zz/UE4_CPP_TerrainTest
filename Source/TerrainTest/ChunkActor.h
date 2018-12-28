@@ -55,6 +55,8 @@ public:
 		int cmToMeter = 100; // distance between vertices or block size
 	UPROPERTY(VisibleAnywhere)
 		double offsetMultiplier = 0.2;
+	UPROPERTY(VisibleAnywhere)
+		FVector chunkPosition;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Default)
 		UMaterialInterface* TheMaterial;

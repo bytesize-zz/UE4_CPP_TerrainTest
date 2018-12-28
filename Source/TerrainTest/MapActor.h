@@ -26,26 +26,28 @@ public:
 	void SpawnMap(int radius);
 	void SpawnChunk(FVector chunk);
 
+	void DeleteChunk(AActor* chunk);
+
 	FVector getPlayerPositions();
 
 	void unloadChunks(); // delete one or all chunkActor beyond the load radius
 
 	FVector getActiveChunk(FVector playerPosition); // calculates the chunk the player is within, from the given playerLocation
-	TArray<FVector> getChunksToLoad(); // get a list of all chunks to load within the radius of each active player
-	TArray<FVector> getChunksToUnload(); // get a list of all chunks, that are loaded but not within radius of each active player
+	TArray<FVector> getChunksToLoad(FVector activeChunk); // get a list of all chunks to load within the radius of one active player
+	TArray<FVector> getChunksToUnload(FVector activeChunk); // get a list of all chunks, that are loaded but not within radius of one active player
+
+	void logVectorArray(TArray<FVector> myArray);
 
 
 private:
 	UPROPERTY(VisibleAnywhere)
 		int chunkSize = 64;
 
-		TArray<FVector> loadedChunks; //list of chunks that are loaded Example: (0,0,0/1,0,0/-1,-1,0)
-
+	UPROPERTY(VisibleAnywhere)
+		TArray<AActor*> loadedChunks; // list of Pointers to all loaded chunks
 		TArray<FVector> playerPositions;
+
 	UPROPERTY(VisibleAnywhere)
 		int cmToMeter = 100; // distance between vertices or block size
-		int radius = 0;
+		int radius = 5;
 };
-
-
-// TODO: keep track of players on the map, and build/load the chunks around them.
