@@ -23,7 +23,7 @@ void AMapActor::BeginPlay()
 	PrimaryActorTick.bCanEverTick = true;
 	SetActorTickInterval(1);
 
-	SpawnMap(2);
+	//SpawnMap(2);
 }
 
 // Called every frame

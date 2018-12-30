@@ -65,7 +65,7 @@ void AChunkActor::BeginPlay()
 	//chunkSize = 64;
 
 	//BuildHeightMap(heightMap, position);
-	//BuildChunk(heightMap);
+	BuildChunk(heightMap);
 	generateWaterMesh();
 }
 
@@ -197,7 +197,7 @@ TArray<int> AChunkActor::getTriangles()
 	for (int vert=0, y = 0; y < chunkSize; y++, vert++) {
 		for (int x = 0; x < chunkSize; x++, vert++) {
 
-			setQuad(triangles, vert, vert + chunkSize + 1, vert + 1, vert + chunkSize + 2);
+			setQuad(triangles, vert, vert + 1, vert + chunkSize + 1, vert + chunkSize + 2);
 		}
 	}
 	//UE_LOG(LogTemp, Warning, TEXT("Triangle Length is: %i"), triangles.Num());
@@ -216,10 +216,10 @@ void AChunkActor::setQuad(TArray<int>& triangles, int v00, int v10, int v01, int
 		triangles.Add(vert + chunkSize + 1);
 	*/
 	triangles.Add(v00);
-	triangles.Add(v10);
-	triangles.Add(v01);
 	triangles.Add(v01);
 	triangles.Add(v10);
+	triangles.Add(v10);
+	triangles.Add(v01);
 	triangles.Add(v11);
 }
 
@@ -229,17 +229,20 @@ TArray<FVector> AChunkActor::getNormals(TArray<FVector> vertices, TArray<int32> 
 	FVector ba, ca;
 	FVector newNormal;
 
-	FVector a, b, c;
+	int a, b, c;
 
-	for (int i = 0; i < triangles.Num(); i+=3) {
-		a = vertices[triangles[i]];
-		b = vertices[triangles[i+1]];
-		c = vertices[triangles[i+2]];
+	UE_LOG(LogTemp, Warning, TEXT("Vertice length is: %i"), vertices.Num());
+	UE_LOG(LogTemp, Warning, TEXT("Triangle length is: %i"), triangles.Num());
 
-		ba = a - b;
-		ca = a - c;
+	for (int i = 0; i < vertices.Num(); i+=3) {
+		a = 0; // vertices[triangles[i]];
+		b = 0; //vertices[triangles[i+1]];
+		c = -1;  //vertices[triangles[i + 2]];
 
-		newNormal = newNormal.CrossProduct(ba, ca);
+		//ba = a - b;
+		//ca = a - c;
+
+		newNormal = FVector(a, b, c); //newNormal.CrossProduct(ba, ca);
 		newNormal.Normalize(1);
 
 		//UE_LOG(LogTemp, Warning, TEXT("New Normal is: %s"), *newNormal.ToString());
@@ -311,7 +314,10 @@ TArray<FVector> AChunkActor::getVertices3D()
 }
 
 void AChunkActor::SetVertex(TArray<FVector>& vertices, int x, int y, int z) {
-	vertices.Add(FVector(x*cmToMeter, y*cmToMeter, z*cmToMeter));
+
+	FVector inner = FVector(x*cmToMeter, y*cmToMeter, (z-63)*cmToMeter);
+	vertices.Add(inner);
+
 }
 
 TArray<int> AChunkActor::getTriangles3D(int vLength)
