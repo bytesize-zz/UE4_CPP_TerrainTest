@@ -23,7 +23,7 @@ void AMapActor::BeginPlay()
 	PrimaryActorTick.bCanEverTick = true;
 	SetActorTickInterval(1);
 
-	radius = 5;
+	SpawnMap(2);
 }
 
 // Called every frame
@@ -31,10 +31,10 @@ void AMapActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
+	//FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 	
-	SpawnMap(radius);
-	getChunksToUnload();
+	//SpawnMap(radius);
+	//getChunksToUnload();
 }
 
 void AMapActor::SpawnMap(int radius) {
@@ -60,7 +60,7 @@ void AMapActor::SpawnMap(int radius) {
 
 void AMapActor::SpawnChunk(FVector chunk)
 {
-	FVector spawnCoord = FVector(chunk[0] * (chunkSize-1)* 100, chunk[1] * (chunkSize-1)* 100, 0);
+	FVector spawnCoord = FVector(chunk[0] * (chunkSize)* 100, chunk[1] * (chunkSize)* 100, 0);
 	AChunkActor *newChunk = GetWorld()->SpawnActor<AChunkActor>(spawnCoord, FRotator(0, 0, 0));
 
 	newChunk->chunkPosition = chunk;

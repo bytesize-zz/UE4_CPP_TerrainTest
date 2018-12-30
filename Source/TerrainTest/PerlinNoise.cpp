@@ -13,7 +13,6 @@
 		 	// Fill p with values from 0 to 255
 		 	std::iota(p.begin(), p.end(), 0);
 
-
 		 	// Initialize a random engine with seed
 		 	std::default_random_engine engine(seed);
 	
