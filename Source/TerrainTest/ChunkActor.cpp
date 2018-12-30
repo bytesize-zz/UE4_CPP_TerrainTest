@@ -3,6 +3,10 @@
 #include "ChunkActor.h"
 #include "PerlinNoise.h"
 #include "KismetProceduralMeshLibrary.h"
+//#include "Runtime/Engine/Classes/GameFramework/PhysicsVolume.h"
+//#include "ActorFactories/ActorFactory.h"
+//#include "ActorFactories/ActorFactoryBoxVolume.h"
+//#include "Editor.h"
 
 #include <iostream>     // std::cout
 #include <algorithm>    // std::for_each
@@ -38,7 +42,9 @@ AChunkActor::AChunkActor()
 	waterMesh->bUseAsyncCooking = true;
 	
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Water_Ocean'"));
+	//static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Water_Ocean'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/MyMaterials/M_Water'"));
+
 
 	if (groundMaterial.Succeeded())
 	{
@@ -53,21 +59,31 @@ AChunkActor::AChunkActor()
 		m_Water = (UMaterialInterface*)waterMaterial.Object;
 		waterMesh->SetMaterial(0, m_Water);
 	}
+	   	 
 }
 
 // Called when the game starts or when spawned
 void AChunkActor::BeginPlay()
 {
 	Super::BeginPlay();
+	chunkSize = 64;
+	double heightMap[64 +1][64 + 1];
 
-	double(*heightMap)[64] = new double[64][64];
+
 	FVector position = GetActorLocation();
-	//chunkSize = 64;
 
-	//BuildHeightMap(heightMap, position);
+
+	BuildHeightMap(heightMap, position);
 	BuildChunk(heightMap);
-	generateWaterMesh();
+
+	CreateWater();
 }
+
+void AChunkActor::Destroyed()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Chunk is getting destroyed"));
+
+	}
 
 // Called every frame
 void AChunkActor::Tick(float DeltaTime)
@@ -75,13 +91,13 @@ void AChunkActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);	
 }
 
-void AChunkActor::BuildChunk(double(*heightMap)[64])
+void AChunkActor::BuildChunk(double(*heightMap)[65])
 {
 	TArray<FVector> vertices;
-	vertices = getVertices( NULL);
+	vertices = getVertices(heightMap);
 
 	TArray<int32> triangles;
-	triangles = getTriangles();
+	triangles = getTriangles(0);
 
 	TArray<FVector> normals;
 	normals = getNormals(vertices, triangles);
@@ -109,36 +125,36 @@ void AChunkActor::generateWaterMesh() {
 	//each x, y is needed to add to the watermesh? only when z of hightmap is below water level
 
 	TArray<FVector> vertices;
-	vertices = getVertices3D();
+	//vertices = getVertices3D();
+	vertices = getVertices(NULL);
 
 	TArray<int32> triangles;
-	triangles = getTriangles3D(vertices.Num());
+	//triangles = getTriangles3D(vertices.Num());
+	triangles = getTriangles(1);
 
 	TArray<FVector> normals;
-	normals = getNormals(vertices, triangles);
+	//normals = getNormals(vertices, triangles);
 
 	TArray<FVector2D> UV0;
 	UV0 = getUVs(vertices);
 
 	//ToDo: What are these tangents?
 	TArray<FProcMeshTangent> tangents;
-
 	/*tangents.Add(FProcMeshTangent(0, 1, 0));
 	tangents.Add(FProcMeshTangent(0, 1, 0));
-	tangents.Add(FProcMeshTangent(0, 1, 0));*/
-
-	
+	tangents.Add(FProcMeshTangent(0, 1, 0));*/	
 	
 	TArray<FLinearColor> vertexColors; // ToDo: find out, why this is nessecary
 
-	waterMesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+	waterMesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, false);
+	waterMesh->CastShadow = false;
 
 	// Enable collision data
 	//waterMesh->ContainsPhysicsTriMeshData(true);
 }
 
 
-void AChunkActor::BuildHeightMap(double(*heightMap)[64], FVector position)
+void AChunkActor::BuildHeightMap(double(*heightMap)[65], FVector position)
 {
 	unsigned int seed = 898;
 	PerlinNoise pn(seed);
@@ -150,10 +166,10 @@ void AChunkActor::BuildHeightMap(double(*heightMap)[64], FVector position)
 
 	double yOff = position[1] / cmToMeter * offsetMultiplier; //ToDo: this /1000 needs to be connected to the +=0.1
 	//UE_LOG(LogTemp, Warning, TEXT("yOff: %f"), yOff);
-	for (int y = 0; y < 64; y++) {
+	for (int y = 0; y <=chunkSize; y++) {
 		double xOff = position[0] / cmToMeter * offsetMultiplier;
 		//UE_LOG(LogTemp, Warning, TEXT("xOff: %f"), xOff);
-		for (int x = 0; x < 64; x++) {
+		for (int x = 0; x <=chunkSize; x++) {
 			double m = pn.noise(xOff, yOff, 0.8);
 			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), m);
 			m = (m-0.5) * extremaMultiplier;
@@ -168,11 +184,11 @@ void AChunkActor::BuildHeightMap(double(*heightMap)[64], FVector position)
 }
 
 
-TArray<FVector> AChunkActor::getVertices(double(*heightMap)[64] = NULL)
+TArray<FVector> AChunkActor::getVertices(double(*heightMap)[65] = NULL)
 {
 	TArray<FVector> vertices;
 
-	UE_LOG(LogTemp, Warning, TEXT("Chunksize: %i"), chunkSize);
+	//UE_LOG(LogTemp, Warning, TEXT("Chunksize: %i"), chunkSize);
 
 	//loops should be go from 0 to x,y<=chunksize
 	for (int y = 0; y <=chunkSize; y++) {
@@ -190,14 +206,14 @@ TArray<FVector> AChunkActor::getVertices(double(*heightMap)[64] = NULL)
 	return vertices;
 }
 
-TArray<int> AChunkActor::getTriangles()
+TArray<int> AChunkActor::getTriangles(int mode)
 {
 	TArray<int> triangles;
 
 	for (int vert=0, y = 0; y < chunkSize; y++, vert++) {
 		for (int x = 0; x < chunkSize; x++, vert++) {
-
 			setQuad(triangles, vert, vert + 1, vert + chunkSize + 1, vert + chunkSize + 2);
+			if(mode==1) setQuad(triangles, vert, vert + chunkSize + 1, vert + 1, vert + chunkSize + 2); //the bottom plane is only needed for water
 		}
 	}
 	//UE_LOG(LogTemp, Warning, TEXT("Triangle Length is: %i"), triangles.Num());
@@ -231,8 +247,8 @@ TArray<FVector> AChunkActor::getNormals(TArray<FVector> vertices, TArray<int32> 
 
 	int a, b, c;
 
-	UE_LOG(LogTemp, Warning, TEXT("Vertice length is: %i"), vertices.Num());
-	UE_LOG(LogTemp, Warning, TEXT("Triangle length is: %i"), triangles.Num());
+	//UE_LOG(LogTemp, Warning, TEXT("Vertice length is: %i"), vertices.Num());
+	//UE_LOG(LogTemp, Warning, TEXT("Triangle length is: %i"), triangles.Num());
 
 	for (int i = 0; i < vertices.Num(); i+=3) {
 		a = 0; // vertices[triangles[i]];
@@ -416,6 +432,32 @@ void AChunkActor::createBottomFace(TArray<int>& triangles, int ring, int vLength
 	}
 	//last quad
 	setQuad(triangles, vTop, vTop - 1, vMid, vTop - 2);
+
+}
+
+void AChunkActor::CreateWater()
+{
+	generateWaterMesh();
+
+	//WaterPhysicActor->AttachToActor(this, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+	//FActorSpawnParameters spawnParams;	
+	//APhysicsVolume *WaterPhysicActor  = GetWorld()->SpawnActor<APhysicsVolume>(FVector(0, 0, 0), FRotator(0, 0, 0), spawnParams);
+	//WaterPhysicActor->GetActorTransform()->SetMobility
+	//Root->SetMobility(EComponentMobility::Static);
+	//WaterPhysicActor->SetOwner(this);
+
+	//WaterPhysicActor->bWaterVolume = true;
+	//WaterPhysicActor->FluidFriction = 100;
+	//WaterPhysicActor->SetActorScale3D(FVector(40, 40, 64));
+	//WaterPhysicActor->bColored = true;
+
+	//WaterPhysicActor->AttachToComponent(Root, FAttachmentTransformRules(EAttachmentRule::KeepWorld, false));
+
+
+
+	//UObject* PostProcessVolumeObj = FindObject<UObject>(nullptr, TEXT("/Script/Engine.PhysicsVolume"));
+	//UActorFactory* PostProcessVolumeFactory = GEditor->FindActorFactoryByClassForActorClass(UActorFactoryBoxVolume::StaticClass(), APhysicsVolume::StaticClass());
+	//APhysicsVolume* PostProcessVolume = Cast<APhysicsVolume>(PostProcessVolumeFactory->CreateActor(PostProcessVolumeObj, GetWorld()->PersistentLevel, FTransform()));
 
 }
 

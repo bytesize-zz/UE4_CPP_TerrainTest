@@ -9,7 +9,7 @@ AMapActor::AMapActor()
 {
 
 
-	FVector chunkSize = FVector(64, 64, 64);
+	//FVector chunkSize = FVector(64, 64, 64);
 	TArray<TArray<int>> chunkList;
 	int multiplier = 100;
 }
@@ -33,8 +33,8 @@ void AMapActor::Tick(float DeltaTime)
 
 	//FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 	
-	//SpawnMap(radius);
-	//getChunksToUnload();
+	SpawnMap(radius);
+	getChunksToUnload();
 }
 
 void AMapActor::SpawnMap(int radius) {
