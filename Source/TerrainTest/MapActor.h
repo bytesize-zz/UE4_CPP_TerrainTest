@@ -24,6 +24,9 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	TArray<float> GetHeightMapForChunk(FVector chunk);
+
 	void SpawnMap(int radius);
 	void SpawnChunk(FVector chunk);
 	bool isLoaded(FVector chunk);
@@ -49,5 +52,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 		int cmToMeter = 100; // distance between vertices or block size
-		int radius = 5;
+		int chunkLoadRadius = 5;
+		
 };

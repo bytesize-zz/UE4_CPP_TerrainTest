@@ -2,6 +2,8 @@
 
 #include "ChunkActor.h"
 #include "PerlinNoise.h"
+#include "Librarys/FastNoise.h"
+
 #include "KismetProceduralMeshLibrary.h"
 //#include "Runtime/Engine/Classes/GameFramework/PhysicsVolume.h"
 //#include "ActorFactories/ActorFactory.h"
@@ -66,17 +68,14 @@ AChunkActor::AChunkActor()
 void AChunkActor::BeginPlay()
 {
 	Super::BeginPlay();
-	chunkSize = 64;
-	double heightMap[64 +1][64 + 1];
-
-
 	FVector position = GetActorLocation();
 
 
-	BuildHeightMap(heightMap, position);
-	BuildChunk(heightMap);
+	//BuildHeightMap(heightMap, position);
+	BuildChunk();
 
-	CreateWater();
+	//CreateWater();
+		
 }
 
 void AChunkActor::Destroyed()
@@ -91,10 +90,21 @@ void AChunkActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);	
 }
 
-void AChunkActor::BuildChunk(double(*heightMap)[65])
+void AChunkActor::setChunkHeightMap(TArray<float> newHeightMap)
+{
+	ChunkHeightMap = newHeightMap;
+}
+
+void AChunkActor::setChunkSize(int chunkSize)
+{
+	this->chunkSize = chunkSize;
+
+}
+
+void AChunkActor::BuildChunk()
 {
 	TArray<FVector> vertices;
-	vertices = getVertices(heightMap);
+	vertices = getVertices();
 
 	TArray<int32> triangles;
 	triangles = getTriangles(0);
@@ -126,7 +136,7 @@ void AChunkActor::generateWaterMesh() {
 
 	TArray<FVector> vertices;
 	//vertices = getVertices3D();
-	vertices = getVertices(NULL);
+	vertices = getVertices();
 
 	TArray<int32> triangles;
 	//triangles = getTriangles3D(vertices.Num());
@@ -153,38 +163,7 @@ void AChunkActor::generateWaterMesh() {
 	//waterMesh->ContainsPhysicsTriMeshData(true);
 }
 
-
-void AChunkActor::BuildHeightMap(double(*heightMap)[65], FVector position)
-{
-	unsigned int seed = 898;
-	PerlinNoise pn(seed);
-
-	double offsetMultiplier = 0.02; //ToDo: find out why the UProperty isn't working
-	int extremaMultiplier = 30;
-	   
-	//UE_LOG(LogTemp, Warning, TEXT("Chunk Location is %s"), *position.ToString());
-
-	double yOff = position[1] / cmToMeter * offsetMultiplier; //ToDo: this /1000 needs to be connected to the +=0.1
-	//UE_LOG(LogTemp, Warning, TEXT("yOff: %f"), yOff);
-	for (int y = 0; y <=chunkSize; y++) {
-		double xOff = position[0] / cmToMeter * offsetMultiplier;
-		//UE_LOG(LogTemp, Warning, TEXT("xOff: %f"), xOff);
-		for (int x = 0; x <=chunkSize; x++) {
-			double m = pn.noise(xOff, yOff, 0.8);
-			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), m);
-			m = (m-0.5) * extremaMultiplier;
-
-			//UE_LOG(LogTemp, Warning, TEXT("Position i is %f, %f "), position[0] / 100, position[1] / 100);
-
-			heightMap[x][y] = m;
-			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), m);
-			xOff += offsetMultiplier;		}
-		yOff += offsetMultiplier;
-	}
-}
-
-
-TArray<FVector> AChunkActor::getVertices(double(*heightMap)[65] = NULL)
+TArray<FVector> AChunkActor::getVertices()
 {
 	TArray<FVector> vertices;
 
@@ -195,10 +174,10 @@ TArray<FVector> AChunkActor::getVertices(double(*heightMap)[65] = NULL)
 		for (int x = 0; x <=chunkSize; x++)
 		{	
 			double z;
-			if(heightMap == NULL) z = 0;  
-			else z = heightMap[x][y];
+			if(ChunkHeightMap.Num() > 0)
+				z = ChunkHeightMap[ y* (chunkSize+1) + x];
 
-			//UE_LOG(LogTemp, Warning, TEXT("hightMap %f"), heightMap[x][y]);
+			//UE_LOG(LogTemp, Warning, TEXT("chunkHeightMap.num %i"), ChunkHeightMap.Num());
 			vertices.Add(FVector(x*cmToMeter, y*cmToMeter, z * cmToMeter));
 		}
 	}	

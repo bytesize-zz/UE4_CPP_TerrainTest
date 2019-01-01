@@ -21,23 +21,12 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
-	
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	void BuildChunk(double (*)[65]); // chunk doesn't exist so build it from scratch
-	void generateWaterMesh();
-	void LoadChunk(); //ToDo
-	void SaveChunk(); //ToDo
-
-	void BuildHeightMap(double(*heightMap)[65], FVector position);
-
-	TArray<FVector> getVertices(double(*heightMap)[65]); // build our vertices for chunk at position with dimension 
+private:
+	TArray<FVector> getVertices(); // build our vertices for chunk at position with dimension 
 	TArray<int> getTriangles(int mode);
 	void setQuad(TArray<int> &triangles, int v00, int v10, int v01, int v11);
-	TArray<FVector> getNormals(TArray<FVector> vertices,  TArray<int32> triangles);
+	TArray<FVector> getNormals(TArray<FVector> vertices, TArray<int32> triangles);
 	TArray<FVector2D> getUVs(TArray<FVector> vertices);
 
 	TArray<FVector> getVertices3D();
@@ -46,6 +35,13 @@ public:
 	TArray<int> getTriangles3D(int vLength);
 	void createTopFace(TArray<int> &triangles, int ring);
 	void createBottomFace(TArray<int> &triangles, int ring, int vLength);
+	
+	void BuildChunk(); // chunk doesn't exist so build it from scratch
+	void generateWaterMesh();
+	void LoadChunk(); //ToDo
+	void SaveChunk(); //ToDo
+
+	void BuildHeightMap(double(*heightMap)[65], FVector position);
 
 	//water physics
 	void CreateWater();
@@ -55,6 +51,13 @@ public:
 	void LogTriangles(TArray<int> myTriangles);
 
 	void LogTriVertices(TArray<int> myTriangles, TArray<FVector> myVertices);
+
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	void setChunkHeightMap(TArray<float> newHeightMap);
+	void setChunkSize(int chunkSize);
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -74,13 +77,13 @@ public:
 	UPROPERTY(VisibleAnywhere)
 		FVector chunkPosition;
 	UPROPERTY(VisibleAnywhere)
-		int chunkSize = 64;
+		int chunkSize;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Default)
 		UMaterialInterface* m_Ground;
 		UMaterialInterface* m_Water;
 		APhysicsVolume * WaterPhysicActor;
-
+		TArray<float> ChunkHeightMap;
 
  //either we set heightmap as public variable, or we need a function to get the height endpoints at each side, to pass to surrounding chunks
 

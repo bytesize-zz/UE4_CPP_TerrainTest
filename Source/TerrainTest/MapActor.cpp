@@ -3,15 +3,18 @@
 #include "MapActor.h"
 #include "ChunkActor.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Librarys/FastNoise.h"
+#include "Matrix.h"
 
 // Sets default values
-AMapActor::AMapActor()
-{
+AMapActor::AMapActor(){
 
 
 	//FVector chunkSize = FVector(64, 64, 64);
 	TArray<TArray<int>> chunkList;
 	int multiplier = 100;
+
+	
 }
 
 // Called when the game starts or when spawned
@@ -24,6 +27,8 @@ void AMapActor::BeginPlay()
 	SetActorTickInterval(1);
 
 	//SpawnMap(2);
+	//SpawnChunk(FVector(0, 0, 0));
+	//SpawnChunk(FVector(-1, 0, 0));
 }
 
 // Called every frame
@@ -32,19 +37,50 @@ void AMapActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	//FVector myActiveChunk = getActiveChunk(getPlayerPositions());
-	
-	SpawnMap(radius);
+
+	SpawnMap(chunkLoadRadius);
 	getChunksToUnload();
 }
 
-void AMapActor::SpawnMap(int radius) {
+TArray<float> AMapActor::GetHeightMapForChunk(FVector chunk)
+{
+	TArray<float> heightMap;
+
+	FastNoise lowTerrainNoise;
+	int lowTerrainAmplitude;
+	FastNoise mountainNoise;
+	int mountainAmplitude;
+
+	lowTerrainNoise.SetFrequency(0.3);
+	lowTerrainNoise.SetFractalOctaves(8);
+	lowTerrainAmplitude = 1;
+
+	mountainNoise.SetFrequency(0.03);
+	mountainAmplitude = 7500;
+	mountainNoise.SetFractalOctaves(11);
+
+	int chunkXPos = 0;
+	int chunkYPos = 0;
+
+	for (int y = 0; y <= chunkSize; y++) {
+		chunkYPos = (chunk[1] * chunkSize + y) * 100;
+		for (int x = 0; x <= chunkSize; x++) {
+			chunkXPos = (chunk[0] * chunkSize + x) * 100;
+
+			heightMap.Add(lowTerrainNoise.GetNoise(chunkXPos, chunkYPos));			
+		}
+	}
+	return heightMap;
+}
+
+void AMapActor::SpawnMap(int chunkLoadRadius) {
 
 	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 	int x = myActiveChunk[0];
 	int y = myActiveChunk[1];
 
-	for (int i = -radius; i <=radius; i++) {
-		for (int j = -radius; j <=radius; j++) {
+	for (int i = -chunkLoadRadius; i <= chunkLoadRadius; i++) {
+		for (int j = -chunkLoadRadius; j <= chunkLoadRadius; j++) {
 			FVector newVector = FVector(x + i, y + j, 0);
 			//check if the computed chunk is already loaded, if not add it chunksToLoad
 			if (!isLoaded(newVector)) {
@@ -61,9 +97,21 @@ void AMapActor::SpawnMap(int radius) {
 void AMapActor::SpawnChunk(FVector chunk)
 {
 	FVector spawnCoord = FVector(chunk[0] * (chunkSize)* 100, chunk[1] * (chunkSize)* 100, 0);
-	AChunkActor *newChunk = GetWorld()->SpawnActor<AChunkActor>(spawnCoord, FRotator(0, 0, 0));
-
+	//UE_LOG(LogTemp, Warning, TEXT("Chunk with SpawnCoor: %s spawned at : %s"), *chunk.ToString(),  *spawnCoord.ToString());
+	
+	//AChunkActor *newChunk;
+	const UWorld* World = GetWorld();
+	const FTransform SpawnLocAndRotation = FTransform(FRotator(0,0,0), spawnCoord, FVector(1,1,1));
+	AChunkActor * newChunk = GetWorld()->SpawnActorDeferred<AChunkActor>(AChunkActor::StaticClass(), SpawnLocAndRotation);
+	newChunk->setChunkSize(chunkSize);
+	newChunk->setChunkHeightMap(GetHeightMapForChunk(chunk));
 	newChunk->chunkPosition = chunk;
+	newChunk->FinishSpawning(SpawnLocAndRotation);
+
+
+	//newChunk = GetWorld()->SpawnActor<AChunkActor>(spawnCoord, FRotator(0, 0, 0));
+
+
 
 	if (newChunk) {
 		loadedChunks.Add(newChunk);
@@ -125,7 +173,7 @@ bool AMapActor::isInRadius(FVector chunk)
 	FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 
 	// use abs() to compare chunk radius, without getting mixed up with negatives
-	if ((abs(chunk[0] - myActiveChunk[0]) > radius) || (abs(chunk[1] - myActiveChunk[1]) > radius))
+	if ((abs(chunk[0] - myActiveChunk[0]) > chunkLoadRadius) || (abs(chunk[1] - myActiveChunk[1]) > chunkLoadRadius))
 		return false;
 	else
 		return true;
