@@ -73,7 +73,6 @@ void AChunkActor::BeginPlay()
 
 	//BuildHeightMap(heightMap, position);
 	BuildChunk();
-
 	//CreateWater();
 		
 }
@@ -85,26 +84,32 @@ void AChunkActor::Destroyed()
 	}
 
 // Called every frame
-void AChunkActor::Tick(float DeltaTime)
-{
+void AChunkActor::Tick(float DeltaTime){
 	Super::Tick(DeltaTime);	
 }
 
-void AChunkActor::setChunkHeightMap(TArray<float> newHeightMap)
-{
+void AChunkActor::setChunkHeightMap(TArray<float> newHeightMap){
 	ChunkHeightMap = newHeightMap;
 }
 
-void AChunkActor::setChunkSize(int chunkSize)
-{
-	this->chunkSize = chunkSize;
+void AChunkActor::setChunkSize(int newChunkSize){
+	chunkSize = newChunkSize;
+	tmp = chunkSize * RenderQuality;
+}
 
+void AChunkActor::setCmToMeter(int newCmToMeter) {
+	cmToMeter = newCmToMeter;
+}
+
+void AChunkActor::SetRenderQuality(int newRenderQuality){
+	RenderQuality = newRenderQuality;
+	tmp = chunkSize * RenderQuality;
 }
 
 void AChunkActor::BuildChunk()
 {
 	TArray<FVector> vertices;
-	vertices = getVertices();
+	vertices = getVertices(0);
 
 	TArray<int32> triangles;
 	triangles = getTriangles(0);
@@ -136,7 +141,7 @@ void AChunkActor::generateWaterMesh() {
 
 	TArray<FVector> vertices;
 	//vertices = getVertices3D();
-	vertices = getVertices();
+	vertices = getVertices(1);
 
 	TArray<int32> triangles;
 	//triangles = getTriangles3D(vertices.Num());
@@ -163,25 +168,28 @@ void AChunkActor::generateWaterMesh() {
 	//waterMesh->ContainsPhysicsTriMeshData(true);
 }
 
-TArray<FVector> AChunkActor::getVertices()
+TArray<FVector> AChunkActor::getVertices(int mode)
 {
 	TArray<FVector> vertices;
 
-	//UE_LOG(LogTemp, Warning, TEXT("Chunksize: %i"), chunkSize);
-
-	//loops should be go from 0 to x,y<=chunksize
-	for (int y = 0; y <=chunkSize; y++) {
-		for (int x = 0; x <=chunkSize; x++)
+	for (int y = 0; y <= chunkSize * RenderQuality; y++) {
+		for (int x = 0; x <= chunkSize * RenderQuality; x++)
 		{	
-			double z;
-			if(ChunkHeightMap.Num() > 0)
-				z = ChunkHeightMap[ y* (chunkSize+1) + x];
+			double z = 0; 
+			if(mode == 0){
+				if (ChunkHeightMap.Num() > 0 )  //ToDo
+					z = ChunkHeightMap[y * (chunkSize * RenderQuality + 1) + x];
+				//else UE_LOG(LogTemp, Warning, TEXT("Heightmap Length is wrong: %i"), ChunkHeightMap.Num());
+			}
+			vertices.Add(FVector(x * cmToMeter,  y * cmToMeter, z*cmToMeter));
 
-			//UE_LOG(LogTemp, Warning, TEXT("chunkHeightMap.num %i"), ChunkHeightMap.Num());
-			vertices.Add(FVector(x*cmToMeter, y*cmToMeter, z * cmToMeter));
+			//UE_LOG(LogTemp, Warning, TEXT("HeightMap: x=%i, y=%i | z = %f "), x, y, z);
 		}
-	}	
-	//LogVertices(vertices);
+	}
+	//UE_LOG(LogTemp, Warning, TEXT("Chunksize: %i, RenderQuality: %i, cmToMeter: %i"), chunkSize, RenderQuality, cmToMeter);
+
+	//UE_LOG(LogTemp, Warning, TEXT("Number of Vertices: %i"), vertices.Num());
+	//UE_LOG(LogTemp, Warning, TEXT("Example: %s"), *vertices[10].ToString());
 	return vertices;
 }
 
@@ -189,27 +197,20 @@ TArray<int> AChunkActor::getTriangles(int mode)
 {
 	TArray<int> triangles;
 
-	for (int vert=0, y = 0; y < chunkSize; y++, vert++) {
-		for (int x = 0; x < chunkSize; x++, vert++) {
-			setQuad(triangles, vert, vert + 1, vert + chunkSize + 1, vert + chunkSize + 2);
-			if(mode==1) setQuad(triangles, vert, vert + chunkSize + 1, vert + 1, vert + chunkSize + 2); //the bottom plane is only needed for water
+	for (int vert=0, y = 0; y < tmp; y++, vert++) {
+		for (int x = 0; x < tmp; x++, vert++) {
+			setQuad(triangles, vert, vert + 1, vert + tmp + 1, vert + tmp + 2);
+			if(mode==1) setQuad(triangles, vert, vert + tmp + 1, vert + 1, vert + tmp + 2); //the bottom plane is only needed for water
 		}
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("Triangle Length is: %i"), triangles.Num());
+
+	//UE_LOG(LogTemp, Warning, TEXT("Number of Triangles: %i"), triangles.Num());
 	//LogTriangles(triangles);
 	return triangles;
 }
 
 void AChunkActor::setQuad(TArray<int>& triangles, int v00, int v10, int v01, int v11)
 {
-	/*
-		triangles.Add(vert);
-		triangles.Add(vert + chunkSize);
-		triangles.Add(vert + 1);
-		triangles.Add(vert + 1);
-		triangles.Add(vert + chunkSize);
-		triangles.Add(vert + chunkSize + 1);
-	*/
 	triangles.Add(v00);
 	triangles.Add(v01);
 	triangles.Add(v10);
@@ -252,7 +253,7 @@ TArray<FVector> AChunkActor::getNormals(TArray<FVector> vertices, TArray<int32> 
 TArray<FVector2D> AChunkActor::getUVs(TArray<FVector> vertices)
 {
 	TArray<FVector2D> uv;
-	int maximum = (chunkSize - 1) * 100;
+	int maximum = chunkSize* cmToMeter;
 
 	for(int i = 0; i < vertices.Num(); i++) {
 		double u = (vertices[i][0] /maximum ) * 10;
@@ -269,37 +270,30 @@ TArray<FVector> AChunkActor::getVertices3D()
 	TArray<FVector> vertices;
 
 	float waterPosition = 0;
-
-	//UE_LOG(LogTemp, Warning, TEXT("Chunksize: %i"), chunkSize);
 	
 	for (int z = 0; z <= chunkSize; z++) {
 		for (int x = 0; x <= chunkSize; x++) {
-			//vertices.Add(FVector(x*cmToMeter, 0, (z+waterPosition)*cmToMeter));
 			SetVertex(vertices, x, 0, z);
 		}
 		for (int y = 1; y <= chunkSize; y++) {
-			//vertices.Add(FVector(chunkSize*cmToMeter, y*cmToMeter, (z + waterPosition)*cmToMeter));
 			SetVertex(vertices, chunkSize, y, z);
 		}
 		for (int x = chunkSize - 1; x >= 0; x--) {
-			//vertices.Add(FVector(x*cmToMeter, chunkSize*cmToMeter, (z + waterPosition)*cmToMeter));
+
 			SetVertex(vertices, x, chunkSize, z);
 		}
 		for (int y = chunkSize - 1; y > 0; y--) {
-			//vertices.Add(FVector(0, y*cmToMeter, (z + waterPosition)*cmToMeter));
 			SetVertex(vertices, 0, y, z);
 		}
 	}
 	
 	for (int y = 1; y < chunkSize; y++) {
 		for (int x = 1; x < chunkSize; x++) {
-			//vertices.Add(FVector(x*cmToMeter, y*cmToMeter, (chunkSize + waterPosition)*cmToMeter));
 			SetVertex(vertices, x, y, chunkSize);
 		}
 	}
 	for (int y = 1; y < chunkSize; y++) {
 		for (int x = 1; x < chunkSize; x++) {
-			//vertices.Add(FVector(x*cmToMeter, y*cmToMeter, (0 + waterPosition)));
 			SetVertex(vertices, x, y, 0);
 		}
 	}
@@ -310,7 +304,7 @@ TArray<FVector> AChunkActor::getVertices3D()
 
 void AChunkActor::SetVertex(TArray<FVector>& vertices, int x, int y, int z) {
 
-	FVector inner = FVector(x*cmToMeter, y*cmToMeter, (z-63)*cmToMeter);
+	FVector inner = FVector(x*cmToMeter, y*cmToMeter, (z-chunkSize-1)*cmToMeter);
 	vertices.Add(inner);
 
 }
@@ -418,62 +412,8 @@ void AChunkActor::CreateWater()
 {
 	generateWaterMesh();
 
-	//WaterPhysicActor->AttachToActor(this, FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
-	//FActorSpawnParameters spawnParams;	
-	//APhysicsVolume *WaterPhysicActor  = GetWorld()->SpawnActor<APhysicsVolume>(FVector(0, 0, 0), FRotator(0, 0, 0), spawnParams);
-	//WaterPhysicActor->GetActorTransform()->SetMobility
-	//Root->SetMobility(EComponentMobility::Static);
-	//WaterPhysicActor->SetOwner(this);
-
-	//WaterPhysicActor->bWaterVolume = true;
-	//WaterPhysicActor->FluidFriction = 100;
-	//WaterPhysicActor->SetActorScale3D(FVector(40, 40, 64));
-	//WaterPhysicActor->bColored = true;
-
-	//WaterPhysicActor->AttachToComponent(Root, FAttachmentTransformRules(EAttachmentRule::KeepWorld, false));
-
-
-
-	//UObject* PostProcessVolumeObj = FindObject<UObject>(nullptr, TEXT("/Script/Engine.PhysicsVolume"));
-	//UActorFactory* PostProcessVolumeFactory = GEditor->FindActorFactoryByClassForActorClass(UActorFactoryBoxVolume::StaticClass(), APhysicsVolume::StaticClass());
-	//APhysicsVolume* PostProcessVolume = Cast<APhysicsVolume>(PostProcessVolumeFactory->CreateActor(PostProcessVolumeObj, GetWorld()->PersistentLevel, FTransform()));
-
 }
 
 
 
-
-
-
-void AChunkActor::LogVertices(TArray<FVector> myVertices)
-{
-	/*
-	for (int i = 0; i < myVertices.Num(); i++) {
-		UE_LOG(LogTemp, Warning, TEXT("New Vector at position %i is %s"), i, *myVertices[i].ToString());
-	}
-	*/
-	UE_LOG(LogTemp, Warning, TEXT("Vertices Length is: %i"), myVertices.Num());
-	UE_LOG(LogTemp, Warning, TEXT("New Vector at position %i is %s"), 10, *myVertices[10].ToString());
-}
-
-void AChunkActor::LogTriangles(TArray<int> myTriangles)
-{
-	int i = 0;
-	while (i < myTriangles.Num() - 2)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Triangle Nr. %i between: %i, %i, %i"), i, myTriangles[i], myTriangles[i + 1], myTriangles[i + 2]);
-		i += 3;
-	}
-}
-
-void AChunkActor::LogTriVertices(TArray<int> myTriangles, TArray<FVector> myVertices) {
-	int i = 0;
-
-	while (i < 400)	{
-		UE_LOG(LogTemp, Warning, TEXT("----------------------------"));
-		UE_LOG(LogTemp, Warning, TEXT("Triangle between: %s, %s, %s"), *myVertices[myTriangles[i]].ToString(), *myVertices[myTriangles[i+1]].ToString(), *myVertices[myTriangles[i+2]].ToString());
-		UE_LOG(LogTemp, Warning, TEXT("and Triangle between: %s, %s, %s"), *myVertices[myTriangles[i+3]].ToString(), *myVertices[myTriangles[i+4]].ToString(), *myVertices[myTriangles[i+5]].ToString());
-		i += 6;
-	}
-}
 

@@ -51,7 +51,8 @@ private:
 		TArray<FVector> playerPositions;
 
 	UPROPERTY(VisibleAnywhere)
-		int cmToMeter = 100; // distance between vertices or block size
+		int cmToMeter; // distance between vertices or block size
 		int chunkLoadRadius = 5;
+		int RenderQuality = 4;
 		
 };

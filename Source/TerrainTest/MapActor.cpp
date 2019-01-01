@@ -1,20 +1,19 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+//Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MapActor.h"
 #include "ChunkActor.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Librarys/FastNoise.h"
-#include "Matrix.h"
+#include "Runtime/Core/Public/Math/UnrealMathUtility.h"
+
 
 // Sets default values
 AMapActor::AMapActor(){
 
-
-	//FVector chunkSize = FVector(64, 64, 64);
 	TArray<TArray<int>> chunkList;
-	int multiplier = 100;
 
-	
+	cmToMeter = 100 / RenderQuality;
+
 }
 
 // Called when the game starts or when spawned
@@ -28,13 +27,18 @@ void AMapActor::BeginPlay()
 
 	//SpawnMap(2);
 	//SpawnChunk(FVector(0, 0, 0));
-	//SpawnChunk(FVector(-1, 0, 0));
+	//SpawnChunk(FVector(0, 1, 0));
+	//SpawnChunk(FVector(0, 1, 0));
+	//SpawnChunk(FVector(-1, 1, 0));
+	//SpawnChunk(FVector(-1, -1, 0));
 }
 
 // Called every frame
 void AMapActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	cmToMeter = 100 / RenderQuality;
 
 	//FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 
@@ -51,25 +55,38 @@ TArray<float> AMapActor::GetHeightMapForChunk(FVector chunk)
 	FastNoise mountainNoise;
 	int mountainAmplitude;
 
-	lowTerrainNoise.SetFrequency(0.3);
+	lowTerrainNoise.SetFrequency(0.003);
+	lowTerrainNoise.SetNoiseType(FastNoise::Perlin);
 	lowTerrainNoise.SetFractalOctaves(8);
-	lowTerrainAmplitude = 1;
+	lowTerrainAmplitude = 50;
 
 	mountainNoise.SetFrequency(0.03);
-	mountainAmplitude = 7500;
+	mountainNoise.SetNoiseType(FastNoise::Cellular);
 	mountainNoise.SetFractalOctaves(11);
+	mountainAmplitude = 10;
+	
+	float newLowTerrainHeight = 0;
+	float newMountainTerrainHeight = 0;
 
 	int chunkXPos = 0;
 	int chunkYPos = 0;
 
-	for (int y = 0; y <= chunkSize; y++) {
-		chunkYPos = (chunk[1] * chunkSize + y) * 100;
-		for (int x = 0; x <= chunkSize; x++) {
-			chunkXPos = (chunk[0] * chunkSize + x) * 100;
+	for (int y = 0; y <= chunkSize * RenderQuality; y++) {
+		chunkYPos = chunk[1]*chunkSize*RenderQuality + y;
+		for (int x = 0; x <= chunkSize * RenderQuality; x++) {
+			chunkXPos = chunk[0]*chunkSize*RenderQuality + x;
+			newLowTerrainHeight = lowTerrainNoise.GetNoise(chunkXPos, chunkYPos) * lowTerrainAmplitude;
+			newMountainTerrainHeight = abs(mountainNoise.GetNoise(chunkXPos, chunkYPos)) * mountainAmplitude; 
 
-			heightMap.Add(lowTerrainNoise.GetNoise(chunkXPos, chunkYPos));			
+			//UE_LOG(LogTemp, Warning, TEXT("HeightMap: x=%i, y=%i | chunkXPos=%i, chunkYPos=%i | z = %f "), x, y, chunkXPos, chunkYPos, newLowTerrainHeight);
+
+			//heightMap.Add(newLowTerrainHeight + FMath::Clamp(newLowTerrainHeight, 0.0f, 1.0f) * newMountainTerrainHeight);
+			heightMap.Add(newLowTerrainHeight + (newLowTerrainHeight < 0.5 * lowTerrainAmplitude ? 0 : 1) * newMountainTerrainHeight);
+			//heightMap.Add(newLowTerrainHeight);
 		}
 	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("Heightmap Length: %i"), heightMap.Num());
 	return heightMap;
 }
 
@@ -96,22 +113,20 @@ void AMapActor::SpawnMap(int chunkLoadRadius) {
 
 void AMapActor::SpawnChunk(FVector chunk)
 {
-	FVector spawnCoord = FVector(chunk[0] * (chunkSize)* 100, chunk[1] * (chunkSize)* 100, 0);
-	//UE_LOG(LogTemp, Warning, TEXT("Chunk with SpawnCoor: %s spawned at : %s"), *chunk.ToString(),  *spawnCoord.ToString());
-	
-	//AChunkActor *newChunk;
+	FVector spawnCoord = FVector((chunk[0] * chunkSize)*cmToMeter*RenderQuality, (chunk[1] * chunkSize)*cmToMeter*RenderQuality, 0);
+
+	//UE_LOG(LogTemp, Warning, TEXT("spawncoord: %s"), *spawnCoord.ToString());
+
 	const UWorld* World = GetWorld();
 	const FTransform SpawnLocAndRotation = FTransform(FRotator(0,0,0), spawnCoord, FVector(1,1,1));
+
 	AChunkActor * newChunk = GetWorld()->SpawnActorDeferred<AChunkActor>(AChunkActor::StaticClass(), SpawnLocAndRotation);
 	newChunk->setChunkSize(chunkSize);
+	newChunk->setCmToMeter(cmToMeter);
+	newChunk->SetRenderQuality(RenderQuality);
 	newChunk->setChunkHeightMap(GetHeightMapForChunk(chunk));
 	newChunk->chunkPosition = chunk;
 	newChunk->FinishSpawning(SpawnLocAndRotation);
-
-
-	//newChunk = GetWorld()->SpawnActor<AChunkActor>(spawnCoord, FRotator(0, 0, 0));
-
-
 
 	if (newChunk) {
 		loadedChunks.Add(newChunk);
@@ -136,22 +151,23 @@ FVector AMapActor::getPlayerPositions()
 	playerPositions.Empty(); //clear old positions
 
 	//search for player characters and add their position vector to the array
-	thisPosition = myPlayer->GetPawn()->GetActorLocation();		
-	playerPositions.Add(thisPosition);
+	if (myPlayer) {
+		thisPosition = myPlayer->GetPawn()->GetActorLocation();
+		playerPositions.Add(thisPosition);
+	}
+
 
 	//UE_LOG(LogTemp, Warning, TEXT("Player is located at position: %s"), *playerPositions[0].ToString());
 	return thisPosition;
 	}
 
-FVector AMapActor::getActiveChunk(FVector playerPosition)
-{
+FVector AMapActor::getActiveChunk(FVector playerPosition){
 	FVector activeChunk;
 
-	for (int i = 0; i < 2; i++)
-	{
+	for (int i = 0; i < 2; i++)	{
 		if (playerPosition[i] == 0) activeChunk[i] = 1;
-		else if (playerPosition[i] < 0) activeChunk[i] = (int)floor(playerPosition[i] / (chunkSize *cmToMeter));
-		else if (playerPosition[i] > 0) activeChunk[i] = (int)ceil(playerPosition[i] / (chunkSize *cmToMeter));
+		else if (playerPosition[i] < 0) activeChunk[i] = (int)floor(playerPosition[i] / (chunkSize * cmToMeter));
+		else if (playerPosition[i] > 0) activeChunk[i] = (int)ceil(playerPosition[i] / (chunkSize * cmToMeter));
 	}
 
 	return activeChunk;

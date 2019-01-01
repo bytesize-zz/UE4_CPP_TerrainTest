@@ -23,8 +23,8 @@ protected:
 	virtual void Destroyed() override;
 
 private:
-	TArray<FVector> getVertices(); // build our vertices for chunk at position with dimension 
-	TArray<int> getTriangles(int mode);
+	TArray<FVector> getVertices(int mode); // build our vertices for chunk at position with dimension mode 0 for terrain, 1 for water
+	TArray<int> getTriangles(int mode); // mode 0 for terrain, 1 for water
 	void setQuad(TArray<int> &triangles, int v00, int v10, int v01, int v11);
 	TArray<FVector> getNormals(TArray<FVector> vertices, TArray<int32> triangles);
 	TArray<FVector2D> getUVs(TArray<FVector> vertices);
@@ -40,8 +40,6 @@ private:
 	void generateWaterMesh();
 	void LoadChunk(); //ToDo
 	void SaveChunk(); //ToDo
-
-	void BuildHeightMap(double(*heightMap)[65], FVector position);
 
 	//water physics
 	void CreateWater();
@@ -59,6 +57,9 @@ public:
 	void setChunkHeightMap(TArray<float> newHeightMap);
 	void setChunkSize(int chunkSize);
 
+	void setCmToMeter(int cmToMeter);
+	void SetRenderQuality(int newRenderQuality);
+
 private:
 	UPROPERTY(VisibleAnywhere)
 		USceneComponent * Root;
@@ -66,18 +67,20 @@ private:
 		UProceduralMeshComponent * waterMesh;
 		//UKismetProceduralMeshLibrary * kismet; //ToDO: Find out if there is another way to use these library functions
 		//UStaticMeshComponent* cube;
+		int RenderQuality = 1;
 
 public:		
 	UPROPERTY(VisibleAnywhere)
 		int extremaMultiplier = 30;
 	UPROPERTY(VisibleAnywhere)
-		int cmToMeter = 100; // distance between vertices or block size
+		int cmToMeter; // distance between vertices or block size
+		int tmp; // Temporary Name for chunkSize * renderQuality
 	UPROPERTY(VisibleAnywhere)
 		double offsetMultiplier = 0.2;
 	UPROPERTY(VisibleAnywhere)
 		FVector chunkPosition;
 	UPROPERTY(VisibleAnywhere)
-		int chunkSize;
+		int chunkSize = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Default)
 		UMaterialInterface* m_Ground;
