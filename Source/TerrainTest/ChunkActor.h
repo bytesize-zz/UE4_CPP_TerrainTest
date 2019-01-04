@@ -36,8 +36,8 @@ private:
 	void createTopFace(TArray<int> &triangles, int ring);
 	void createBottomFace(TArray<int> &triangles, int ring, int vLength);
 	
-	void BuildChunk(); // chunk doesn't exist so build it from scratch
-	void generateWaterMesh();
+	void GenerateGroundMesh(); // chunk doesn't exist so build it from scratch
+	void GenerateWaterMesh();
 	void LoadChunk(); //ToDo
 	void SaveChunk(); //ToDo
 
@@ -71,12 +71,8 @@ private:
 
 public:		
 	UPROPERTY(VisibleAnywhere)
-		int extremaMultiplier = 30;
-	UPROPERTY(VisibleAnywhere)
 		int cmToMeter; // distance between vertices or block size
 		int tmp; // Temporary Name for chunkSize * renderQuality
-	UPROPERTY(VisibleAnywhere)
-		double offsetMultiplier = 0.2;
 	UPROPERTY(VisibleAnywhere)
 		FVector chunkPosition;
 	UPROPERTY(VisibleAnywhere)

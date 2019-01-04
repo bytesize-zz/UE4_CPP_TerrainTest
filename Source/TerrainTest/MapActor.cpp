@@ -49,7 +49,11 @@ void AMapActor::Tick(float DeltaTime)
 TArray<float> AMapActor::GetHeightMapForChunk(FVector chunk)
 {
 	TArray<float> heightMap;
+	FVector absoluteChunkPos = FVector(chunk[0] * chunkSize, chunk[1] * chunkSize, 0);
 
+	BaseHeightMap(heightMap, absoluteChunkPos);
+	MountainHeightMap(heightMap, absoluteChunkPos);
+	/*
 	FastNoise lowTerrainNoise;
 	int lowTerrainAmplitude;
 	FastNoise mountainNoise;
@@ -60,9 +64,9 @@ TArray<float> AMapActor::GetHeightMapForChunk(FVector chunk)
 	lowTerrainNoise.SetFractalOctaves(8);
 	lowTerrainAmplitude = 50;
 
-	mountainNoise.SetFrequency(0.03);
+	mountainNoise.SetFrequency(0.05);
 	mountainNoise.SetNoiseType(FastNoise::Cellular);
-	mountainNoise.SetFractalOctaves(11);
+	mountainNoise.SetFractalOctaves(3);
 	mountainAmplitude = 10;
 	
 	float newLowTerrainHeight = 0;
@@ -76,19 +80,93 @@ TArray<float> AMapActor::GetHeightMapForChunk(FVector chunk)
 		for (int x = 0; x <= chunkSize * RenderQuality; x++) {
 			chunkXPos = chunk[0]*chunkSize*RenderQuality + x;
 			newLowTerrainHeight = lowTerrainNoise.GetNoise(chunkXPos, chunkYPos) * lowTerrainAmplitude;
-			newMountainTerrainHeight = abs(mountainNoise.GetNoise(chunkXPos, chunkYPos)) * mountainAmplitude; 
+			//newMountainTerrainHeight = abs(mountainNoise.GetNoise(chunkXPos, chunkYPos)) * mountainAmplitude; 
+			float tmp = mountainNoise.GetNoise(chunkXPos, chunkYPos);
+			newMountainTerrainHeight = tmp * tmp*mountainAmplitude;
 
-			//UE_LOG(LogTemp, Warning, TEXT("HeightMap: x=%i, y=%i | chunkXPos=%i, chunkYPos=%i | z = %f "), x, y, chunkXPos, chunkYPos, newLowTerrainHeight);
 
-			//heightMap.Add(newLowTerrainHeight + FMath::Clamp(newLowTerrainHeight, 0.0f, 1.0f) * newMountainTerrainHeight);
 			heightMap.Add(newLowTerrainHeight + (newLowTerrainHeight < 0.5 * lowTerrainAmplitude ? 0 : 1) * newMountainTerrainHeight);
-			//heightMap.Add(newLowTerrainHeight);
 		}
 	}
-
+	*/
 	//UE_LOG(LogTemp, Warning, TEXT("Heightmap Length: %i"), heightMap.Num());
 	return heightMap;
 }
+
+void AMapActor::BaseHeightMap(TArray<float> &heightMap, FVector pos)
+{
+
+	FastNoise baseTerrainNoise;
+	int baseTerrainAmplitude;
+
+	baseTerrainNoise.SetFrequency(0.003);
+	baseTerrainNoise.SetNoiseType(FastNoise::Perlin);
+	baseTerrainNoise.SetFractalOctaves(8);
+	baseTerrainAmplitude = 10;
+
+	int xStep = 0;
+	int yStep = 0;
+
+	float newHeight = 0;
+
+
+	for (int y = 0; y <= chunkSize * RenderQuality; y++) {
+		yStep = pos[1] +  y/RenderQuality;
+		for (int x = 0; x <= chunkSize * RenderQuality; x++) {
+			xStep = pos[0] +  x/RenderQuality;
+			newHeight = baseTerrainNoise.GetNoise(xStep, yStep) * baseTerrainAmplitude;
+
+			heightMap.Add(newHeight);
+		}
+	}
+}
+
+void AMapActor::MountainHeightMap(TArray<float> &heightMap, FVector pos)
+{
+	int mountainAmplitude;
+	mountainAmplitude = 10;
+
+	FastNoise mountainCube;
+	mountainCube.SetFrequency(0.002);
+	mountainCube.SetNoiseType(FastNoise::Cubic);
+	mountainCube.SetFractalOctaves(7);
+
+	FastNoise mountainCellular;
+	mountainCellular.SetFrequency(0.005);
+	mountainCellular.SetNoiseType(FastNoise::Cellular);
+	mountainCellular.SetCellularReturnType(FastNoise::Distance2Add);
+	mountainCellular.SetFractalOctaves(3);
+
+	FastNoise mountainPerlin;
+	mountainPerlin.SetFrequency(0.003);
+	mountainPerlin.SetNoiseType(FastNoise::PerlinFractal);
+	mountainPerlin.SetFractalOctaves(11);	
+	   
+	float newHeight = 0;
+
+	int xStep = 0;
+	int yStep = 0;
+
+	for (int y = 0; y <= chunkSize * RenderQuality; y++) {
+		yStep = pos[1] +  + y/RenderQuality;
+		for (int x = 0; x <= chunkSize * RenderQuality; x++) {
+			xStep = pos[0] + x/RenderQuality;
+			float clamp = FMath::Clamp(mountainCube.GetNoise(xStep, yStep), 0.0f, 1.0f);
+
+			float tmp = mountainCellular.GetNoise(xStep, yStep);
+			newHeight = (tmp * tmp + abs(mountainPerlin.GetNoise(xStep, yStep))) * mountainAmplitude;
+			
+			heightMap[y * (chunkSize * RenderQuality + 1) + x] += clamp * newHeight * mountainAmplitude;
+			//heightMap[y * (chunkSize * RenderQuality + 1) + x] += FMath::Clamp(mountainCube.GetNoise(xStep, yStep), 0.0f, 1.0f) * newHeight *mountainAmplitude;
+		}
+	}
+
+}
+
+
+
+
+
 
 void AMapActor::SpawnMap(int chunkLoadRadius) {
 

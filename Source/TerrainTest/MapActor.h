@@ -27,6 +27,10 @@ public:
 
 	TArray<float> GetHeightMapForChunk(FVector chunk);
 
+	void BaseHeightMap(TArray<float> &heightMap, FVector chunk);
+	void MountainHeightMap(TArray<float> &heightMap, FVector chunk);
+
+
 	void SpawnMap(int radius);
 	void SpawnChunk(FVector chunk);
 	bool isLoaded(FVector chunk);
@@ -50,9 +54,9 @@ private:
 		TArray<AChunkActor*> loadedChunks; // list of Pointers to all loaded chunks
 		TArray<FVector> playerPositions;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 		int cmToMeter; // distance between vertices or block size
 		int chunkLoadRadius = 5;
-		int RenderQuality = 4;
+		int RenderQuality = 1; //ToDo
 		
 };

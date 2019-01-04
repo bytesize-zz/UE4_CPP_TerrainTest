@@ -5,10 +5,6 @@
 #include "Librarys/FastNoise.h"
 
 #include "KismetProceduralMeshLibrary.h"
-//#include "Runtime/Engine/Classes/GameFramework/PhysicsVolume.h"
-//#include "ActorFactories/ActorFactory.h"
-//#include "ActorFactories/ActorFactoryBoxVolume.h"
-//#include "Editor.h"
 
 #include <iostream>     // std::cout
 #include <algorithm>    // std::for_each
@@ -43,10 +39,10 @@ AChunkActor::AChunkActor()
 	mesh->bUseAsyncCooking = true;
 	waterMesh->bUseAsyncCooking = true;
 	
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
+	//static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
 	//static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Water_Ocean'"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/MyMaterials/M_Water'"));
-
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/MyMaterials/M_Terrain'"));
 
 	if (groundMaterial.Succeeded())
 	{
@@ -70,18 +66,13 @@ void AChunkActor::BeginPlay()
 	Super::BeginPlay();
 	FVector position = GetActorLocation();
 
-
-	//BuildHeightMap(heightMap, position);
-	BuildChunk();
-	//CreateWater();
+	GenerateGroundMesh();
+	CreateWater();
 		
 }
 
 void AChunkActor::Destroyed()
-{
-	//UE_LOG(LogTemp, Warning, TEXT("Chunk is getting destroyed"));
-
-	}
+{	}
 
 // Called every frame
 void AChunkActor::Tick(float DeltaTime){
@@ -106,7 +97,7 @@ void AChunkActor::SetRenderQuality(int newRenderQuality){
 	tmp = chunkSize * RenderQuality;
 }
 
-void AChunkActor::BuildChunk()
+void AChunkActor::GenerateGroundMesh()
 {
 	TArray<FVector> vertices;
 	vertices = getVertices(0);
@@ -132,10 +123,9 @@ void AChunkActor::BuildChunk()
 	mesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
 	// Enable collision data
 	mesh->ContainsPhysicsTriMeshData(true);
-	
 }
 
-void AChunkActor::generateWaterMesh() {
+void AChunkActor::GenerateWaterMesh() {
 	//while generating the water mesh, could we use the ground hightmap, to ask if
 	//each x, y is needed to add to the watermesh? only when z of hightmap is below water level
 
@@ -186,10 +176,7 @@ TArray<FVector> AChunkActor::getVertices(int mode)
 			//UE_LOG(LogTemp, Warning, TEXT("HeightMap: x=%i, y=%i | z = %f "), x, y, z);
 		}
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("Chunksize: %i, RenderQuality: %i, cmToMeter: %i"), chunkSize, RenderQuality, cmToMeter);
 
-	//UE_LOG(LogTemp, Warning, TEXT("Number of Vertices: %i"), vertices.Num());
-	//UE_LOG(LogTemp, Warning, TEXT("Example: %s"), *vertices[10].ToString());
 	return vertices;
 }
 
@@ -298,7 +285,6 @@ TArray<FVector> AChunkActor::getVertices3D()
 		}
 	}
 
-	//LogVertices(vertices);
 	return vertices;
 }
 
@@ -410,7 +396,7 @@ void AChunkActor::createBottomFace(TArray<int>& triangles, int ring, int vLength
 
 void AChunkActor::CreateWater()
 {
-	generateWaterMesh();
+	GenerateWaterMesh();
 
 }
 
