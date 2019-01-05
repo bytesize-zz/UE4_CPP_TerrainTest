@@ -27,19 +27,28 @@ AChunkActor::AChunkActor()
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = Root;
 
-	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("GeneratedMesh"));
+	outputMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("OutputMesh"));
+	tmpMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("TmpMesh"));
+	completeMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("CompleteMesh"));
 	waterMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("GeneratedWaterMesh"));
 
-	mesh->SetupAttachment(Root);
+	outputMesh->SetupAttachment(Root);
 	waterMesh->SetupAttachment(Root);
+
+	completeMesh->SetHiddenInGame(true);
+	tmpMesh->SetHiddenInGame(true);
 
 	waterMesh->SetCollisionProfileName(TEXT("NoCollision"));
 
 	// New in UE 4.17, multi-threaded PhysX cooking.
-	mesh->bUseAsyncCooking = true;
+	//mesh->bUseAsyncCooking = true;
+	outputMesh->bUseAsyncCooking = true;	
 	waterMesh->bUseAsyncCooking = true;
 	
-	//static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> grassMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> mudMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Gravel'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> rockMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Rock_Basalt'"));
+
 	//static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Water_Ocean'"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/MyMaterials/M_Water'"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/MyMaterials/M_Terrain'"));
@@ -48,7 +57,13 @@ AChunkActor::AChunkActor()
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("Found groundMaterial."));
 		m_Ground = (UMaterialInterface*)groundMaterial.Object;
-		mesh->SetMaterial(0, m_Ground);
+		m_Grass = (UMaterialInterface*)grassMaterial.Object;
+		m_Mud = (UMaterialInterface*)mudMaterial.Object;
+		m_Rock = (UMaterialInterface*)rockMaterial.Object;
+
+		outputMesh->SetMaterial(0, m_Ground);
+		outputMesh->SetMaterial(1, m_Grass);
+		outputMesh->SetMaterial(2, m_Rock);
 	}
 
 	if (waterMaterial.Succeeded())
@@ -56,8 +71,7 @@ AChunkActor::AChunkActor()
 		//UE_LOG(LogTemp, Warning, TEXT("Found waterMaterial."));
 		m_Water = (UMaterialInterface*)waterMaterial.Object;
 		waterMesh->SetMaterial(0, m_Water);
-	}
-	   	 
+	}	   	 
 }
 
 // Called when the game starts or when spawned
@@ -100,10 +114,35 @@ void AChunkActor::SetRenderQuality(int newRenderQuality){
 void AChunkActor::GenerateGroundMesh()
 {
 	TArray<FVector> vertices;
-	vertices = getVertices(0);
+	//vertices = getVertices(0);
+
+	//TestArea
+	TArray<TArray<FVector>> v2 = {TArray<FVector>(), TArray<FVector>(), TArray<FVector>() }; // The 3 Terrain Types: Underwater, Grass, Mountain
+	TArray<FVector2D> minMax = { FVector2D(-1000, 0), FVector2D(0, 20), FVector2D(20, 2000) }; // minMax Z Values for each Terrain Type
+	getSlicedVertices(v2, minMax);
+	//UE_LOG(LogTemp, Warning, TEXT("Vertex Count| Total: %i UnderWater: %i, Grass: %i, Mountain: %i"), v2[0].Num()+ v2[1].Num()+ v2[2].Num(),v2[0].Num(), v2[1].Num(), v2[2].Num());
+
+	UE_LOG(LogTemp, Warning, TEXT("v2[1] Length: %i"), v2[1].Num());
+	for (int i = 0; i < v2[1].Num(); i++) {
+		UE_LOG(LogTemp, Warning, TEXT("v2[1][%i]%s"), i, *v2[1][i].ToString());
+	}
+	
+
+
 
 	TArray<int32> triangles;
-	triangles = getTriangles(0);
+	//triangles = getTriangles(0);
+
+	//TestArea
+	TArray<TArray<int>> t2 = { TArray<int> (), TArray<int> (), TArray<int> ()}; // the triangles for each Terrain
+	TArray<int> verticesLength = { v2[0].Num() , v2[1].Num() , v2[2].Num() };	// number of vertices for each terrain
+	getSlicedTriangles(t2, v2);
+
+	UE_LOG(LogTemp, Warning, TEXT("t2[1] Length: %i"), t2[1].Num());
+	for (int i = 0; i < t2[1].Num()-2; i+=3) {
+		UE_LOG(LogTemp, Warning, TEXT("Triangle %i between: %s, %s, %s"), *v2[1][t2[1][i]].ToString(), *v2[1][t2[1][i+1]].ToString(), *v2[1][t2[1][i+2]].ToString());
+	}
+
 
 	TArray<FVector> normals;
 	normals = getNormals(vertices, triangles);
@@ -120,14 +159,38 @@ void AChunkActor::GenerateGroundMesh()
 	
 
 	TArray<FLinearColor> vertexColors; // ToDo: find out, why this is nessecary
-	mesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+	//mesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+
+	completeMesh->CreateMeshSection_LinearColor(0, v2[1], t2[1], normals, UV0, vertexColors, tangents, true);
+
+	completeMesh->SetHiddenInGame(true);
+	UKismetProceduralMeshLibrary::SliceProceduralMesh(completeMesh, FVector(1, 1, 2000), FVector(0, 0, 1), true, tmpMesh, EProcMeshSliceCapOption::CreateNewSectionForCap, m_Grass);
+	UKismetProceduralMeshLibrary::GetSectionFromProceduralMesh(tmpMesh, 0, vertices, triangles, normals, UV0, tangents);
+	//outputMesh->CreateMeshSection_LinearColor(2, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+
+	UKismetProceduralMeshLibrary::SliceProceduralMesh(completeMesh, FVector(1, 1, 0), FVector(0, 0, 1), true, tmpMesh, EProcMeshSliceCapOption::CreateNewSectionForCap, m_Grass);
+	UKismetProceduralMeshLibrary::GetSectionFromProceduralMesh(tmpMesh, 0, vertices, triangles, normals, UV0, tangents);
+	outputMesh->CreateMeshSection_LinearColor(1, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+
+	UKismetProceduralMeshLibrary::GetSectionFromProceduralMesh(completeMesh, 0, vertices, triangles, normals, UV0, tangents);
+	//outputMesh->CreateMeshSection_LinearColor(2, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+
+	completeMesh = tmpMesh;
+	UKismetProceduralMeshLibrary::SliceProceduralMesh(completeMesh, FVector(0, 0, 2000), FVector(0, 0, 1), true, tmpMesh, EProcMeshSliceCapOption::UseLastSectionForCap, m_Grass);
+	UKismetProceduralMeshLibrary::GetSectionFromProceduralMesh(completeMesh, 0, vertices, triangles, normals, UV0, tangents);
+	//outputMesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+
+
 	// Enable collision data
-	mesh->ContainsPhysicsTriMeshData(true);
+	completeMesh->ClearAllMeshSections();
+	tmpMesh->ClearAllMeshSections();
+	outputMesh->ContainsPhysicsTriMeshData(true);
 }
 
 void AChunkActor::GenerateWaterMesh() {
 	//while generating the water mesh, could we use the ground hightmap, to ask if
 	//each x, y is needed to add to the watermesh? only when z of hightmap is below water level
+	//Could we reduce the vertex count to 4 ?
 
 	TArray<FVector> vertices;
 	//vertices = getVertices3D();
@@ -194,6 +257,40 @@ TArray<int> AChunkActor::getTriangles(int mode)
 	//UE_LOG(LogTemp, Warning, TEXT("Number of Triangles: %i"), triangles.Num());
 	//LogTriangles(triangles);
 	return triangles;
+}
+
+
+
+void AChunkActor::getSlicedVertices(TArray<TArray<FVector>>& vertices, TArray<FVector2D> minMax)
+{
+
+	for (int y = 0; y <= chunkSize * RenderQuality; y++) {
+		for (int x = 0; x <= chunkSize * RenderQuality; x++)
+		{
+			double z = 0;
+			if (ChunkHeightMap.Num() > 0) {
+				z = ChunkHeightMap[y * (chunkSize * RenderQuality + 1) + x];
+
+				for (int i = 0; i < minMax.Num(); i++) {
+					if (z > minMax[i][0] && z <= minMax[i][1]){
+						vertices[i].Add(FVector(x * cmToMeter, y * cmToMeter, z*cmToMeter));
+					}
+				}
+			}
+		}
+	}
+
+}
+
+void AChunkActor::getSlicedTriangles(TArray<TArray<int>>& triangles, TArray<TArray<FVector>> vertices)
+{
+	for (int i = 1; i < 2; i++) {
+		for (int vert = 0, y = 0; y < vertices[i].Num()/chunkSize; y++, vert++) {
+			for (int x = 0; x < vertices[i].Num() /chunkSize; x++, vert++) {
+				setQuad(triangles[i], vert, vert + 1, vert + chunkSize + 1, vert + chunkSize + 2);				
+			}
+		}
+	}	
 }
 
 void AChunkActor::setQuad(TArray<int>& triangles, int v00, int v10, int v01, int v11)
@@ -397,7 +494,6 @@ void AChunkActor::createBottomFace(TArray<int>& triangles, int ring, int vLength
 void AChunkActor::CreateWater()
 {
 	GenerateWaterMesh();
-
 }
 
 

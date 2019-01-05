@@ -25,6 +25,10 @@ protected:
 private:
 	TArray<FVector> getVertices(int mode); // build our vertices for chunk at position with dimension mode 0 for terrain, 1 for water
 	TArray<int> getTriangles(int mode); // mode 0 for terrain, 1 for water
+
+	void getSlicedVertices(TArray<TArray<FVector>> &vertices, TArray<FVector2D> minMax);
+	void getSlicedTriangles(TArray<TArray<int>> &triangles, TArray<TArray<FVector>> vertices);
+
 	void setQuad(TArray<int> &triangles, int v00, int v10, int v01, int v11);
 	TArray<FVector> getNormals(TArray<FVector> vertices, TArray<int32> triangles);
 	TArray<FVector2D> getUVs(TArray<FVector> vertices);
@@ -38,17 +42,10 @@ private:
 	
 	void GenerateGroundMesh(); // chunk doesn't exist so build it from scratch
 	void GenerateWaterMesh();
-	void LoadChunk(); //ToDo
-	void SaveChunk(); //ToDo
 
 	//water physics
 	void CreateWater();
 
-	//Debug Logging
-	void LogVertices(TArray<FVector> myArray);
-	void LogTriangles(TArray<int> myTriangles);
-
-	void LogTriVertices(TArray<int> myTriangles, TArray<FVector> myVertices);
 
 public:	
 	// Called every frame
@@ -63,10 +60,11 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere)
 		USceneComponent * Root;
+		UProceduralMeshComponent * completeMesh;
+		UProceduralMeshComponent * outputMesh;
+		UProceduralMeshComponent * tmpMesh;
 		UProceduralMeshComponent * mesh;
 		UProceduralMeshComponent * waterMesh;
-		//UKismetProceduralMeshLibrary * kismet; //ToDO: Find out if there is another way to use these library functions
-		//UStaticMeshComponent* cube;
 		int RenderQuality = 1;
 
 public:		
@@ -80,6 +78,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Default)
 		UMaterialInterface* m_Ground;
+		UMaterialInterface* m_Grass;
+		UMaterialInterface* m_Mud;
+		UMaterialInterface* m_Rock;
+
 		UMaterialInterface* m_Water;
 		APhysicsVolume * WaterPhysicActor;
 		TArray<float> ChunkHeightMap;

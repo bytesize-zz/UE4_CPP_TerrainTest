@@ -29,8 +29,8 @@ void AMapActor::BeginPlay()
 	SetActorTickInterval(1);
 
 	//SpawnMap(2);
-	//SpawnChunk(FVector(0, 0, 0));
-	//SpawnChunk(FVector(0, 1, 0));
+	SpawnChunk(FVector(0, 0, 0));
+	SpawnChunk(FVector(0, 1, 0));
 	//SpawnChunk(FVector(0, 1, 0));
 	//SpawnChunk(FVector(-1, 1, 0));
 	//SpawnChunk(FVector(-1, -1, 0));
@@ -45,8 +45,8 @@ void AMapActor::Tick(float DeltaTime)
 
 	//FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 
-	SpawnMap(chunkLoadRadius);
-	getChunksToUnload();
+	//SpawnMap(chunkLoadRadius);
+	//getChunksToUnload();
 }
 
 TArray<float> AMapActor::GetHeightMapForChunk(FVector chunk)
