@@ -239,6 +239,7 @@ bool AMapActor::isInRadius(FVector chunk)
 		return false;
 	else
 		return true;
+
 }
 
 
