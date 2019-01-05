@@ -53,6 +53,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 		TArray<AChunkActor*> loadedChunks; // list of Pointers to all loaded chunks
 		TArray<FVector> playerPositions;
+		USceneComponent * Root;
 
 	UPROPERTY(EditAnywhere)
 		int cmToMeter; // distance between vertices or block size

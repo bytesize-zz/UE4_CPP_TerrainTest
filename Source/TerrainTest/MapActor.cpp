@@ -12,6 +12,9 @@ AMapActor::AMapActor(){
 
 	TArray<TArray<int>> chunkList;
 
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+
 	cmToMeter = 100 / RenderQuality;
 
 }
@@ -53,43 +56,7 @@ TArray<float> AMapActor::GetHeightMapForChunk(FVector chunk)
 
 	BaseHeightMap(heightMap, absoluteChunkPos);
 	MountainHeightMap(heightMap, absoluteChunkPos);
-	/*
-	FastNoise lowTerrainNoise;
-	int lowTerrainAmplitude;
-	FastNoise mountainNoise;
-	int mountainAmplitude;
 
-	lowTerrainNoise.SetFrequency(0.003);
-	lowTerrainNoise.SetNoiseType(FastNoise::Perlin);
-	lowTerrainNoise.SetFractalOctaves(8);
-	lowTerrainAmplitude = 50;
-
-	mountainNoise.SetFrequency(0.05);
-	mountainNoise.SetNoiseType(FastNoise::Cellular);
-	mountainNoise.SetFractalOctaves(3);
-	mountainAmplitude = 10;
-	
-	float newLowTerrainHeight = 0;
-	float newMountainTerrainHeight = 0;
-
-	int chunkXPos = 0;
-	int chunkYPos = 0;
-
-	for (int y = 0; y <= chunkSize * RenderQuality; y++) {
-		chunkYPos = chunk[1]*chunkSize*RenderQuality + y;
-		for (int x = 0; x <= chunkSize * RenderQuality; x++) {
-			chunkXPos = chunk[0]*chunkSize*RenderQuality + x;
-			newLowTerrainHeight = lowTerrainNoise.GetNoise(chunkXPos, chunkYPos) * lowTerrainAmplitude;
-			//newMountainTerrainHeight = abs(mountainNoise.GetNoise(chunkXPos, chunkYPos)) * mountainAmplitude; 
-			float tmp = mountainNoise.GetNoise(chunkXPos, chunkYPos);
-			newMountainTerrainHeight = tmp * tmp*mountainAmplitude;
-
-
-			heightMap.Add(newLowTerrainHeight + (newLowTerrainHeight < 0.5 * lowTerrainAmplitude ? 0 : 1) * newMountainTerrainHeight);
-		}
-	}
-	*/
-	//UE_LOG(LogTemp, Warning, TEXT("Heightmap Length: %i"), heightMap.Num());
 	return heightMap;
 }
 
@@ -157,7 +124,6 @@ void AMapActor::MountainHeightMap(TArray<float> &heightMap, FVector pos)
 			newHeight = (tmp * tmp + abs(mountainPerlin.GetNoise(xStep, yStep))) * mountainAmplitude;
 			
 			heightMap[y * (chunkSize * RenderQuality + 1) + x] += clamp * newHeight * mountainAmplitude;
-			//heightMap[y * (chunkSize * RenderQuality + 1) + x] += FMath::Clamp(mountainCube.GetNoise(xStep, yStep), 0.0f, 1.0f) * newHeight *mountainAmplitude;
 		}
 	}
 
@@ -199,6 +165,8 @@ void AMapActor::SpawnChunk(FVector chunk)
 	const FTransform SpawnLocAndRotation = FTransform(FRotator(0,0,0), spawnCoord, FVector(1,1,1));
 
 	AChunkActor * newChunk = GetWorld()->SpawnActorDeferred<AChunkActor>(AChunkActor::StaticClass(), SpawnLocAndRotation);
+	newChunk->AttachToComponent(Root, FAttachmentTransformRules::KeepWorldTransform);
+
 	newChunk->setChunkSize(chunkSize);
 	newChunk->setCmToMeter(cmToMeter);
 	newChunk->SetRenderQuality(RenderQuality);
