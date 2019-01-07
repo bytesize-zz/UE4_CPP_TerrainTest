@@ -30,7 +30,8 @@ private:
 	void getSlicedTriangles(TArray<TArray<int>> &triangles, TArray<TArray<FVector>> vertices);
 
 	void setQuad(TArray<int> &triangles, int v00, int v10, int v01, int v11);
-	TArray<FVector> getNormals(TArray<FVector> vertices, TArray<int32> triangles);
+	TArray<FVector> CalculateNormals(TArray<FVector> vertices, TArray<int32> triangles);
+	FVector SurfaceNormal(int indexA, int indexB, int indexC);
 	TArray<FVector2D> getUVs(TArray<FVector> vertices);
 
 	TArray<FVector> getVertices3D();
@@ -66,6 +67,7 @@ private:
 		UProceduralMeshComponent * mesh;
 		UProceduralMeshComponent * waterMesh;
 		int RenderQuality = 1;
+		TArray<FVector> terrainVertices;
 
 public:		
 	UPROPERTY(VisibleAnywhere)

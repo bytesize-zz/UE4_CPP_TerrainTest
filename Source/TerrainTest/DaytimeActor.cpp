@@ -36,7 +36,7 @@ void ADaytimeActor::BeginPlay()
 void ADaytimeActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	moveLight();
+	//.moveLight();
 }
 
 void ADaytimeActor::moveLight()

@@ -44,26 +44,22 @@ AChunkActor::AChunkActor()
 	//mesh->bUseAsyncCooking = true;
 	outputMesh->bUseAsyncCooking = true;	
 	waterMesh->bUseAsyncCooking = true;
-	
+	/*
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> grassMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Grass'"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> mudMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Ground_Gravel'"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> rockMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Rock_Basalt'"));
+	*/
 
 	//static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Water_Ocean'"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> waterMaterial(TEXT("Material'/Game/MyMaterials/M_Water'"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/MyMaterials/M_Terrain'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> groundMaterial(TEXT("Material'/Game/MyMaterials/M_Terrain4'"));
 
 	if (groundMaterial.Succeeded())
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("Found groundMaterial."));
 		m_Ground = (UMaterialInterface*)groundMaterial.Object;
-		m_Grass = (UMaterialInterface*)grassMaterial.Object;
-		m_Mud = (UMaterialInterface*)mudMaterial.Object;
-		m_Rock = (UMaterialInterface*)rockMaterial.Object;
 
 		outputMesh->SetMaterial(0, m_Ground);
-		outputMesh->SetMaterial(1, m_Grass);
-		outputMesh->SetMaterial(2, m_Rock);
 	}
 
 	if (waterMaterial.Succeeded())
@@ -113,10 +109,10 @@ void AChunkActor::SetRenderQuality(int newRenderQuality){
 
 void AChunkActor::GenerateGroundMesh()
 {
-	TArray<FVector> vertices;
-	//vertices = getVertices(0);
+	
+	terrainVertices = getVertices(0);
 
-	//TestArea
+	/*TestArea
 	TArray<TArray<FVector>> v2 = {TArray<FVector>(), TArray<FVector>(), TArray<FVector>() }; // The 3 Terrain Types: Underwater, Grass, Mountain
 	TArray<FVector2D> minMax = { FVector2D(-1000, 0), FVector2D(0, 20), FVector2D(20, 2000) }; // minMax Z Values for each Terrain Type
 	getSlicedVertices(v2, minMax);
@@ -127,13 +123,13 @@ void AChunkActor::GenerateGroundMesh()
 		UE_LOG(LogTemp, Warning, TEXT("v2[1][%i]%s"), i, *v2[1][i].ToString());
 	}
 	
-
+	*/
 
 
 	TArray<int32> triangles;
-	//triangles = getTriangles(0);
+	triangles = getTriangles(0);
 
-	//TestArea
+	/*TestArea
 	TArray<TArray<int>> t2 = { TArray<int> (), TArray<int> (), TArray<int> ()}; // the triangles for each Terrain
 	TArray<int> verticesLength = { v2[0].Num() , v2[1].Num() , v2[2].Num() };	// number of vertices for each terrain
 	getSlicedTriangles(t2, v2);
@@ -142,13 +138,14 @@ void AChunkActor::GenerateGroundMesh()
 	for (int i = 0; i < t2[1].Num()-2; i+=3) {
 		UE_LOG(LogTemp, Warning, TEXT("Triangle %i between: %s, %s, %s"), *v2[1][t2[1][i]].ToString(), *v2[1][t2[1][i+1]].ToString(), *v2[1][t2[1][i+2]].ToString());
 	}
+	*/
 
 
 	TArray<FVector> normals;
-	normals = getNormals(vertices, triangles);
+	normals = CalculateNormals(terrainVertices, triangles);
 
 	TArray<FVector2D> UV0;
-	UV0 = getUVs(vertices);
+	UV0 = getUVs(terrainVertices);
 
 
 	TArray<FProcMeshTangent> tangents;
@@ -159,10 +156,10 @@ void AChunkActor::GenerateGroundMesh()
 	
 
 	TArray<FLinearColor> vertexColors; // ToDo: find out, why this is nessecary
-	//mesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
+	outputMesh->CreateMeshSection_LinearColor(0, terrainVertices, triangles, normals, UV0, vertexColors, tangents, true);
 
-	completeMesh->CreateMeshSection_LinearColor(0, v2[1], t2[1], normals, UV0, vertexColors, tangents, true);
-
+	//ompleteMesh->CreateMeshSection_LinearColor(0, v2[1], t2[1], normals, UV0, vertexColors, tangents, true);
+	/*
 	completeMesh->SetHiddenInGame(true);
 	UKismetProceduralMeshLibrary::SliceProceduralMesh(completeMesh, FVector(1, 1, 2000), FVector(0, 0, 1), true, tmpMesh, EProcMeshSliceCapOption::CreateNewSectionForCap, m_Grass);
 	UKismetProceduralMeshLibrary::GetSectionFromProceduralMesh(tmpMesh, 0, vertices, triangles, normals, UV0, tangents);
@@ -179,11 +176,11 @@ void AChunkActor::GenerateGroundMesh()
 	UKismetProceduralMeshLibrary::SliceProceduralMesh(completeMesh, FVector(0, 0, 2000), FVector(0, 0, 1), true, tmpMesh, EProcMeshSliceCapOption::UseLastSectionForCap, m_Grass);
 	UKismetProceduralMeshLibrary::GetSectionFromProceduralMesh(completeMesh, 0, vertices, triangles, normals, UV0, tangents);
 	//outputMesh->CreateMeshSection_LinearColor(0, vertices, triangles, normals, UV0, vertexColors, tangents, true);
-
+	*/
 
 	// Enable collision data
-	completeMesh->ClearAllMeshSections();
-	tmpMesh->ClearAllMeshSections();
+	//completeMesh->ClearAllMeshSections();
+	//tmpMesh->ClearAllMeshSections();
 	outputMesh->ContainsPhysicsTriMeshData(true);
 }
 
@@ -303,36 +300,48 @@ void AChunkActor::setQuad(TArray<int>& triangles, int v00, int v10, int v01, int
 	triangles.Add(v11);
 }
 
-TArray<FVector> AChunkActor::getNormals(TArray<FVector> vertices, TArray<int32> triangles)
+TArray<FVector> AChunkActor::CalculateNormals(TArray<FVector> vertices, TArray<int32> triangles)
 {
-	TArray<FVector> normals;
-	FVector ba, ca;
-	FVector newNormal;
+	TArray<FVector> vertexNormals;
+	vertexNormals.SetNum(terrainVertices.Num());
 
-	int a, b, c;
+	for (int i = 0; i < triangles.Num()/3; i++) {
+		int normalTriangleIndex = i * 3;
+		int vertexIndexA = triangles[normalTriangleIndex];
+		int vertexIndexB = triangles[normalTriangleIndex+1];
+		int vertexIndexC = triangles[normalTriangleIndex+2];
 
-	//UE_LOG(LogTemp, Warning, TEXT("Vertice length is: %i"), vertices.Num());
-	//UE_LOG(LogTemp, Warning, TEXT("Triangle length is: %i"), triangles.Num());
-
-	for (int i = 0; i < vertices.Num(); i+=3) {
-		a = 0; // vertices[triangles[i]];
-		b = 0; //vertices[triangles[i+1]];
-		c = -1;  //vertices[triangles[i + 2]];
-
-		//ba = a - b;
-		//ca = a - c;
-
-		newNormal = FVector(a, b, c); //newNormal.CrossProduct(ba, ca);
-		newNormal.Normalize(1);
-
-		//UE_LOG(LogTemp, Warning, TEXT("New Normal is: %s"), *newNormal.ToString());
-		//UE_LOG(LogTemp, Warning, TEXT("new normal is: %s"),  *newNormal.ToString());
-		normals.Add(newNormal);
+		FVector triangleNormal = SurfaceNormal(vertexIndexA, vertexIndexB, vertexIndexC);
+		
+		vertexNormals[vertexIndexA] += triangleNormal;
+		vertexNormals[vertexIndexB] += triangleNormal;
+		vertexNormals[vertexIndexC] += triangleNormal;
 	}
-	/*std::for_each(int32, triangles) {	}*/
 
-	return normals;
+	for (int i = 0; i < vertexNormals.Num(); i++) {
+		vertexNormals[i].Normalize(1);
+	}
+
+
+	return vertexNormals;
 }
+
+FVector AChunkActor::SurfaceNormal(int indexA, int indexB, int indexC)
+{
+	FVector pointA = terrainVertices[indexA];
+	FVector pointB = terrainVertices[indexB];
+	FVector pointC = terrainVertices[indexC];
+
+	FVector sideAB = pointB - pointA;
+	FVector sideAC = pointC - pointA;
+
+	FVector result = FVector::CrossProduct(sideAC, sideAB);
+	result.Normalize(1);
+
+	return result;
+}
+
+
 
 TArray<FVector2D> AChunkActor::getUVs(TArray<FVector> vertices)
 {
