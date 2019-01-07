@@ -28,7 +28,8 @@ void AMapActor::BeginPlay()
 	PrimaryActorTick.bCanEverTick = true;
 	SetActorTickInterval(1);
 
-	SpawnMap(3);
+	//SpawnMap(2);
+	//SpawnChunk(FVector(-2,-2,0));
 }
 
 // Called every frame
@@ -40,7 +41,7 @@ void AMapActor::Tick(float DeltaTime)
 
 	//FVector myActiveChunk = getActiveChunk(getPlayerPositions());
 
-	//SpawnMap(chunkLoadRadius);
+	SpawnMap(chunkLoadRadius);
 	//getChunksToUnload();
 }
 
@@ -59,7 +60,7 @@ void AMapActor::BaseHeightMap(TArray<float> &heightMap, FVector pos)
 {
 
 	FastNoise baseTerrainNoise;
-	int baseTerrainAmplitude;
+	int baseTerrainAmplitude=10;
 
 	baseTerrainNoise.SetFrequency(0.003);
 	baseTerrainNoise.SetNoiseType(FastNoise::Perlin);
@@ -141,6 +142,7 @@ void AMapActor::SpawnMap(int chunkLoadRadius) {
 			//check if the computed chunk is already loaded, if not add it chunksToLoad
 			if (!isLoaded(newVector)) {
 				SpawnChunk(newVector);
+				//UE_LOG(LogTemp, Warning, TEXT("New chunk to load: %s"), *newVector.ToString());
 			}
 		}
 	}
@@ -232,7 +234,6 @@ bool AMapActor::isInRadius(FVector chunk)
 		return false;
 	else
 		return true;
-
 }
 
 
@@ -250,13 +251,4 @@ void AMapActor::getChunksToUnload()
 		}			
 	}
 }
-
-
-void AMapActor::logVectorArray(TArray<FVector> myArray)
-{
-	for (int i = 0; i < myArray.Num(); i++) {
-		UE_LOG(LogTemp, Warning, TEXT("Vector: %s"),  *myArray[i].ToString());
-	}
-}
-
 
