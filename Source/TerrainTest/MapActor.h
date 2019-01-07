@@ -25,7 +25,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	TArray<float> GetHeightMapForChunk(FVector chunk);
+	TArray<float> CalculateHeightMapForChunk(FVector chunk);
 
 	void BaseHeightMap(TArray<float> &heightMap, FVector chunk);
 	void MountainHeightMap(TArray<float> &heightMap, FVector chunk);
@@ -43,8 +43,6 @@ public:
 	FVector getActiveChunk(FVector playerPosition); // calculates the chunk the player is within, from the given playerLocation
 	void getChunksToUnload(); // get a list of all chunks, that are loaded but not within radius of one active player
 
-	void logVectorArray(TArray<FVector> myArray);
-
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -53,11 +51,11 @@ private:
 	UPROPERTY(VisibleAnywhere)
 		TArray<AChunkActor*> loadedChunks; // list of Pointers to all loaded chunks
 		TArray<FVector> playerPositions;
-		USceneComponent * Root;
+		USceneComponent * root;
 
 	UPROPERTY(EditAnywhere)
 		int cmToMeter; // distance between vertices or block size
 		int chunkLoadRadius = 5;
-		int RenderQuality = 1; //ToDo
+		int renderQuality = 1; //ToDo
 		
 };

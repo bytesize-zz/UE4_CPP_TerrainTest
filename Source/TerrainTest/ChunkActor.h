@@ -23,21 +23,21 @@ protected:
 	virtual void Destroyed() override;
 
 private:
-	TArray<FVector> getVertices(int mode); // build our vertices for chunk at position with dimension mode 0 for terrain, 1 for water
-	TArray<int> getTriangles(int mode); // mode 0 for terrain, 1 for water
+	TArray<FVector> CalculateVertices(int mode); // build our vertices for chunk at position with dimension mode 0 for terrain, 1 for water
+	TArray<int> CalculateTriangles(int mode); // mode 0 for terrain, 1 for water
 
-	void getSlicedVertices(TArray<TArray<FVector>> &vertices, TArray<FVector2D> minMax);
-	void getSlicedTriangles(TArray<TArray<int>> &triangles, TArray<TArray<FVector>> vertices);
+	void CalculateSlicedVertices(TArray<TArray<FVector>> &vertices, TArray<FVector2D> minMax);
+	void CalculateSlicedTriangles(TArray<TArray<int>> &triangles, TArray<TArray<FVector>> vertices);
 
 	void setQuad(TArray<int> &triangles, int v00, int v10, int v01, int v11);
 	TArray<FVector> CalculateNormals(TArray<FVector> vertices, TArray<int32> triangles);
 	FVector SurfaceNormal(int indexA, int indexB, int indexC);
-	TArray<FVector2D> getUVs(TArray<FVector> vertices);
+	TArray<FVector2D> CalculateUVs(TArray<FVector> vertices);
 
-	TArray<FVector> getVertices3D();
-	void SetVertex(TArray<FVector>& vertices, int x, int y, int z);
+	TArray<FVector> CalculateVertices3D();
+	void setVertex(TArray<FVector>& vertices, int x, int y, int z);
 
-	TArray<int> getTriangles3D(int vLength);
+	TArray<int> CalculateTriangles3D(int vLength);
 	void createTopFace(TArray<int> &triangles, int ring);
 	void createBottomFace(TArray<int> &triangles, int ring, int vLength);
 	
@@ -56,7 +56,7 @@ public:
 	void setChunkSize(int chunkSize);
 
 	void setCmToMeter(int cmToMeter);
-	void SetRenderQuality(int newRenderQuality);
+	void SetrenderQuality(int newrenderQuality);
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -66,7 +66,7 @@ private:
 		UProceduralMeshComponent * tmpMesh;
 		UProceduralMeshComponent * mesh;
 		UProceduralMeshComponent * waterMesh;
-		int RenderQuality = 1;
+		int renderQuality = 1;
 		TArray<FVector> terrainVertices;
 
 public:		
@@ -85,8 +85,8 @@ public:
 		UMaterialInterface* m_Rock;
 
 		UMaterialInterface* m_Water;
-		APhysicsVolume * WaterPhysicActor;
-		TArray<float> ChunkHeightMap;
+		APhysicsVolume * waterPhysicActor;
+		TArray<float> chunkHeightMap;
 
  //either we set heightmap as public variable, or we need a function to get the height endpoints at each side, to pass to surrounding chunks
 
