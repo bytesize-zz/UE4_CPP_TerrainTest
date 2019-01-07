@@ -45,6 +45,10 @@
 SourceArt/**/*.png
 SourceArt/**/*.tga
 
+# Free Assets
+Content/ParagonMorigesh*
+Content/StarterContent/*
+
 # Binary Files
 Binaries/*
 Plugins/*/Binaries/*

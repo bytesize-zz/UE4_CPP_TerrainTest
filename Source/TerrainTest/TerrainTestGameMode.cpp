@@ -8,7 +8,7 @@
 ATerrainTestGameMode::ATerrainTestGameMode()
 {
 	// set default pawn class to our Blueprinted character
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/ThirdPersonCPP/Blueprints/ThirdPersonCharacter"));
+	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/ParagonMorigesh/Characters/Heroes/Morigesh/MorigeshPlayerCharacter"));
 	//static ConstructorHelpers::FClassFinder<AActor> PlayerStart(TEXT("NetworkPlayerStart"));
 
 	//TArray<AActor*> FoundActors;
